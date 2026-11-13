@@ -2,6 +2,8 @@
 
 **Responsabilidade principal:** Product Owner e Analista de Requisitos do GarageOps.
 
+Leia primeiro a [visão completa do sistema](../../README.md). As responsabilidades abaixo refletem a decisão aprovada pelo grupo: o administrador da plataforma não acessa o conteúdo operacional das oficinas; as permissões dos papéis da oficina são delimitadas ao tenant ativo.
+
 Este guia ajuda a transformar as necessidades do OficinaPro em prioridades e critérios verificáveis. O trabalho desta função é manter o grupo alinhado sobre **qual problema será resolvido, para quem e como saberemos que a entrega atende ao combinado**.
 
 ## Sua parte no projeto
@@ -11,6 +13,7 @@ Este guia ajuda a transformar as necessidades do OficinaPro em prioridades e cri
 - Escrever requisitos funcionais e não funcionais com critérios de aceite verificáveis.
 - Definir atores, regras de negócio, exceções e dependências sem prescrever detalhes técnicos desnecessários.
 - Acompanhar se a implementação e os testes correspondem ao requisito aprovado.
+- Manter a matriz de papéis alinhada às áreas da aplicação, inclusive a restrição de acesso do administrador da plataforma.
 - Manter os documentos acadêmicos e este README consistentes quando o grupo aprovar uma mudança.
 
 ## Passo a passo para trabalhar em uma demanda
@@ -25,6 +28,27 @@ Este guia ajuda a transformar as necessidades do OficinaPro em prioridades e cri
 8. **Valide com quem vai implementar e testar.** Backend, frontend e qualidade precisam interpretar a regra da mesma maneira.
 9. **Acompanhe a entrega.** Revise o comportamento demonstrado contra os critérios de aceite e registre o resultado.
 10. **Atualize a documentação.** Se houver mudança aprovada, atualize o requisito, fluxo ou diagrama afetado e anote a revisão.
+
+## Entregas que você coordena
+
+1. Backlog priorizado do MVP, com cada história ligada a um fluxo do atendimento.
+2. Matriz de papéis com ações permitidas e negadas para administrador da plataforma, administrador da oficina, atendente, mecânico, financeiro e cliente.
+3. Critérios de aceite que cubram o fluxo normal, erros, estados e limites entre oficinas.
+4. Revisão das mudanças de negócio nos Documentos 01 e 02 do repositório acadêmico.
+5. Validação funcional dos fluxos integrados e aceite do grupo antes de considerar uma história concluída.
+
+### Matriz mínima de permissões a detalhar
+
+| Papel | Necessidades que você transforma em histórias |
+|---|---|
+| Administrador da plataforma | Ver saúde global, métricas agregadas e estado técnico por identificador opaco; não ver dados cadastrais da oficina ou conteúdo operacional |
+| Administrador da oficina | Gerenciar usuários e papéis somente no tenant próprio; supervisionar a operação |
+| Atendente | Cadastrar cliente/veículo e abrir ordem no tenant ativo |
+| Mecânico | Diagnosticar e registrar serviços apenas após aprovação do orçamento vigente |
+| Financeiro | Registrar pagamentos e consultar pendências necessárias ao fechamento |
+| Cliente | Consultar seus vínculos, conversar e decidir sobre versões de orçamento próprias |
+
+Detalhe exceções como atendente também exercer financeiro, se o grupo aprovar múltiplos papéis por vínculo. Até lá, marque essa combinação como questão aberta e não presuma permissão.
 
 ## Exemplo de requisito bem verificável
 
@@ -43,6 +67,14 @@ Exemplo ilustrativo para discutir com o grupo antes de tratar como decisão fina
 
 O exemplo mostra a forma de detalhar; IDs, prioridades e redação oficial devem seguir o documento de requisitos aprovado.
 
+## Exemplo adicional: isolamento do administrador da plataforma
+
+> **História:** como administrador da plataforma GarageOps, quero acompanhar a disponibilidade técnica do SaaS sem visualizar dados das oficinas.
+>
+> **Aceite:** o console mostra saúde global, falhas técnicas e métricas agregadas; não revela nome, documento, contato ou endereço da oficina; tentativas de consultar clientes, veículos, diagnósticos, ordens, orçamentos, mensagens ou pagamentos são negadas pela API e não retornam conteúdo. O administrador da oficina continua acessando apenas o próprio tenant.
+
+Este exemplo está alinhado à decisão aprovada. Use-o para detalhar critérios e casos negativos, sem acrescentar uma função de suporte que leia os dados do tenant.
+
 ## O que conferir antes de considerar um requisito pronto
 
 - O ator está identificado?
@@ -53,6 +85,7 @@ O exemplo mostra a forma de detalhar; IDs, prioridades e redação oficial devem
 - Há um termo ambíguo que o grupo precisa definir?
 - O requisito conflita com o escopo atual, como estoque interno, app nativo ou landing page externa?
 - A regra aparece de forma coerente nos diagramas e no fluxo do projeto?
+- O administrador da plataforma está impedido de acessar conteúdo do tenant tanto na tela quanto nos critérios de autorização da API?
 
 ## Como organizar uma tarefa de produto
 

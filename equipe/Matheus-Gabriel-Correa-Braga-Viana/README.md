@@ -2,6 +2,8 @@
 
 **Responsabilidade principal:** Desenvolvedor Frontend e UX do GarageOps.
 
+Leia primeiro a [visão compartilhada do produto e dos papéis](../../README.md). O sistema tem uma aplicação e um endereço de acesso, com áreas de navegação diferentes por papel e oficina ativa. Esconder um botão melhora a UX, mas não substitui a autorização do backend.
+
 Este guia ajuda a construir uma interface clara para as rotinas da oficina e do cliente. A interface deve explicar o que está acontecendo, orientar a próxima ação e respeitar as permissões recebidas do backend. A segurança continua sendo validada no servidor.
 
 ## Sua parte no projeto
@@ -13,6 +15,7 @@ Este guia ajuda a construir uma interface clara para as rotinas da oficina e do 
 - Adaptar a navegação para computador e celular, com atenção à acessibilidade.
 - Evitar informações falsas: listas, contadores e estados devem vir dos serviços.
 - Testar os caminhos da equipe e do cliente com diferentes papéis e vínculos.
+- Projetar áreas distintas para os seis papéis, especialmente o console técnico sem dados de oficinas para o administrador da plataforma.
 
 ## Fluxos de interface a cobrir
 
@@ -24,6 +27,21 @@ Este guia ajuda a construir uma interface clara para as rotinas da oficina e do 
 6. **Acompanhar ordem:** exibir status, diagnóstico, versões de orçamento, conversa, execução e pagamentos permitidos.
 7. **Decidir orçamento como cliente:** identificar versão e total; permitir aprovar ou recusar somente enquanto aguarda decisão.
 8. **Convidar cliente:** selecionar cliente já cadastrado, apresentar o estado de convite e deixar claro que link sozinho não concede acesso.
+
+## Áreas específicas por papel
+
+Use esta matriz como base para navegação e estados de tela. A permissão final sempre vem da API; a interface deve refletir o papel recebido e lidar com respostas `403` sem expor conteúdo.
+
+| Papel | Área e telas esperadas | Ações que a interface deve oferecer |
+|---|---|---|
+| Administrador da plataforma | Console GarageOps: saúde global, falhas técnicas e métricas agregadas | Filtrar indicadores técnicos; usar somente identificador opaco para estado do tenant; não exibir dados cadastrais nem busca por cliente, placa, ordem ou mensagem |
+| Administrador da oficina | Início da oficina ativa, equipe/vínculos e operação | Gerenciar membros e papéis somente da oficina selecionada; acompanhar ordens segundo as permissões concedidas |
+| Atendente | Atendimento, clientes, veículos e abertura/acompanhamento de ordens | Cadastrar e localizar registros locais, abrir ordem, acompanhar aprovação e comunicação |
+| Mecânico | Fila técnica e detalhe da ordem | Registrar diagnóstico e serviços; visualizar claramente a versão aprovada; ações de execução ficam indisponíveis até a aprovação |
+| Financeiro | Pagamentos e pendências | Registrar pagamento e visualizar total, pago e saldo pendente dentro da oficina |
+| Cliente | Meus veículos, oficinas vinculadas, ordens e conversa | Alternar entre oficinas autorizadas, consultar seus próprios registros e decidir apenas sobre orçamento vigente |
+
+Não construa uma tela que permita alternar para um tenant apenas digitando seu identificador. O seletor deve mostrar somente vínculos ativos retornados pelo backend. A decisão sobre acumular dois papéis na mesma oficina segue pendente; não misture os menus até haver regra aprovada.
 
 ## Passo a passo para cada tela
 
@@ -50,6 +68,16 @@ Exemplo ilustrativo de comportamento de interface:
 - Se a sessão não puder acessar a oficina ou a ordem, a interface mostra uma mensagem clara e não revela o conteúdo.
 
 O frontend não deve presumir que clicar no botão significa que a decisão foi salva. A confirmação deve vir da resposta do backend.
+
+## Exemplo: console do administrador da plataforma
+
+- Mostrar somente saúde técnica, métricas agregadas e mensagens de erro sanitizadas.
+- Identificar estado técnico do tenant somente por identificador opaco, se essa operação for necessária.
+- Não exibir nome, documento, contato ou endereço da oficina.
+- Não mostrar lista de clientes, veículos, ordens, orçamentos, mensagens ou pagamentos.
+- Não criar busca “para suporte” que consulte o conteúdo da oficina.
+- Se o backend negar uma rota, mostrar um estado de acesso não permitido sem repetir dados da resposta.
+- Validar visualmente que as páginas de oficina não aparecem no menu desse papel.
 
 ## Estados que não podem faltar
 
@@ -103,6 +131,8 @@ O protótipo exploratório usa React e Vite. Os documentos-alvo mencionam React 
 - [ ] Não há listas ou contadores fixos usados como se fossem dados reais.
 - [ ] A tela funciona em largura de celular e por teclado.
 - [ ] Erros não mostram stack trace, token ou dados de outra oficina.
+- [ ] O console do administrador da plataforma não apresenta conteúdo operacional nem oferece busca desse conteúdo.
+- [ ] Cada papel recebe navegação coerente e o seletor de oficina lista apenas vínculos ativos.
 - [ ] O Pull Request contém evidência visual quando a mudança altera uma tela.
 
 ## Definição de pronto para sua parte

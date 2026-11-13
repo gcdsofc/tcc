@@ -2,6 +2,8 @@
 
 **Responsabilidade principal:** Desenvolvedor Backend e Integrações do GarageOps.
 
+Leia primeiro a [visão completa e as regras de acesso](../../README.md). A decisão do grupo exige um bloqueio explícito: o papel de administrador da plataforma GarageOps não consulta conteúdo operacional dos tenants, nem por tela nem por API.
+
 Este guia orienta a implementação das regras do OficinaPro no servidor e a comunicação entre serviços. O backend é responsável por validar identidade, oficina ativa, papel, dados e transições de negócio; a interface não pode ser a única barreira de segurança.
 
 ## Sua parte no projeto
@@ -13,6 +15,7 @@ Este guia orienta a implementação das regras do OficinaPro no servidor e a com
 - Devolver erros úteis e consistentes para a interface.
 - Escrever testes para fluxos e regras críticas, incluindo acessos que devem ser negados.
 - Documentar mudanças de contrato e riscos de integração.
+- Implementar autorização distinta para administrador da plataforma e papéis vinculados às oficinas.
 
 ## Antes de começar uma tarefa
 
@@ -35,6 +38,8 @@ Em cada endpoint, verifique:
 - cada cliente, veículo, ordem e versão pertence ao tenant ativo;
 - a transição de estado é válida naquele momento;
 - erros não revelam dados de outra oficina.
+
+Para endpoints de administração da plataforma, não basta não definir `tenantId`: eles devem retornar saúde global, métricas agregadas e estado técnico ligado somente a identificador opaco. Não retorne nome, documento, contato ou endereço da oficina. Não crie endpoints de suporte para buscar cliente, veículo, diagnóstico, ordem, orçamento, mensagem ou pagamento.
 
 ## Exemplo de contrato: abrir ordem de serviço
 
@@ -96,6 +101,19 @@ No MVP atual, não existe catálogo ou saldo interno de peças: a peça é descr
 - Não armazene tokens, códigos de convite, senhas ou segredos nos logs.
 - Evite criar uma API/integrador externo sem requisito e decisão aprovada. ViaCEP aparece nos documentos planejados; demais integrações precisam ser validadas.
 
+## Entregas e contratos para integração
+
+1. Publique rotas, esquemas de entrada e saída e erros no contrato OpenAPI versionado do projeto.
+2. Identifique o serviço dono de cada regra e dado; se a mudança afetar mais de um domínio, combine o contrato antes de abrir PR.
+3. Inclua exemplos reais de sucesso, validação, falta de permissão e tenant incorreto.
+4. Avise Matheus quando a rota estiver disponível para a interface e Gabriel quando forem necessárias migrations, variáveis ou dependências locais.
+5. Inclua testes de regra e autorização no mesmo PR do endpoint.
+6. Não declare a tarefa integrada até que a UI consuma a rota e o fluxo seja reproduzido com os seeds das cinco oficinas.
+
+### Contratos de exemplo para administração
+
+O painel GarageOps pode receber indicadores técnicos agregados, por exemplo disponibilidade de serviços e contagem de erros por período. O contrato não deve incluir nomes de clientes, placas, textos de diagnóstico, itens de orçamento, conteúdo de mensagens ou valores detalhados de pagamentos. Já o administrador da oficina consulta e altera usuários somente com o tenant obtido da sessão e validado no backend.
+
 ## Organização sugerida de uma implementação
 
 Adapte à estrutura real aprovada pelo grupo:
@@ -124,6 +142,7 @@ O projeto-alvo planejado nos documentos usa Node.js, TypeScript e NestJS. O prot
 - [ ] Erros não expõem dados ou segredos.
 - [ ] Testes cobrem sucesso, falha e isolamento multi-tenant.
 - [ ] Contrato da API/evento e documentação foram atualizados.
+- [ ] A conta de administrador da plataforma não consegue acessar dados operacionais por nenhuma rota criada ou alterada.
 - [ ] Nenhuma credencial real ou arquivo `.env` foi incluído.
 
 ## Definição de pronto para sua parte

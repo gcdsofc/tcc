@@ -2,6 +2,8 @@
 
 **Responsabilidade principal:** DevOps, Banco de Dados e Qualidade do GarageOps.
 
+Leia primeiro a [visão do sistema, o modelo de confiança e os critérios de integração](../../README.md). Além do isolamento oficina a oficina, existe uma regra importante: a conta de administrador da plataforma não pode ler conteúdo operacional dos tenants.
+
 Este guia organiza a preparação dos dados e do ambiente, a verificação automatizada e a qualidade das entregas. A infraestrutura deve tornar o projeto reproduzível e observável; o banco deve proteger a integridade e o limite entre oficinas; os testes devem comprovar regras, inclusive as que negam uma ação.
 
 ## Sua parte no projeto
@@ -14,6 +16,7 @@ Este guia organiza a preparação dos dados e do ambiente, a verificação autom
 - Medir a cobertura conforme o requisito não funcional aprovado.
 - Conferir logs, variáveis, dependências e comportamento do ambiente sem expor segredos.
 - Registrar decisões de infraestrutura e consequências para o grupo.
+- Provar com testes e configuração que nem o papel de administrador da plataforma nem o monitoramento acessam conteúdo operacional de tenant.
 
 ## Passo a passo para preparar uma tarefa
 
@@ -27,6 +30,16 @@ Este guia organiza a preparação dos dados e do ambiente, a verificação autom
 8. Automatize as verificações no pipeline: lint/build, testes e cobertura conforme os critérios aprovados.
 9. Documente comandos para iniciar, inspecionar logs, parar e recriar o ambiente, alertando quando uma ação apagar dados.
 10. Revise o Pull Request e confirme que não contém `.env`, senhas, tokens, dumps ou dados reais.
+
+## Entregas sob sua responsabilidade
+
+1. Modelo relacional e migrations alinhados ao Documento 04 e às APIs do serviço dono dos dados.
+2. Docker Compose local reproduzível, com health checks e `.env.example` sem segredos.
+3. Seeds fictícios para cinco oficinas diferentes, incluindo um cliente compartilhado por duas oficinas e outro presente nas cinco, cada qual com perfis e históricos locais separados.
+4. Testes automatizados de isolamento, papéis, autorização do administrador da plataforma, integridade e fluxo financeiro.
+5. Pipeline de CI com build, testes e cobertura global definida no Documento 02.
+6. Plano mínimo de observabilidade que entregue métricas agregadas e logs sanitizados, sem conteúdo de cliente ou ordem.
+7. Instruções de setup e recuperação verificadas por um colega em clone limpo.
 
 ## Exemplo de modelagem de um perfil de cliente por oficina
 
@@ -65,6 +78,10 @@ E a resposta não revela os dados particulares da Oficina B
 
 Repita a verificação para listas, busca por identificador, veículo, ordem, orçamento e conversa. Um endpoint que retorna `404` ou `403` corretamente não basta se outra rota ainda expõe o mesmo registro.
 
+### Verificação negativa do administrador da plataforma
+
+Prepare uma conta com somente o papel de administrador GarageOps. Confirme que ela consegue ver saúde global e métricas agregadas e, se necessário, estado técnico por identificador opaco. Confirme que não consegue obter nome, documento, contato ou endereço da oficina, nem conteúdo de clientes, veículos, diagnósticos, ordens, orçamentos, mensagens ou pagamentos pela UI ou API. Inclua consultas por ID conhecido, filtros, exportações e endpoints de relatórios. Não use dados reais; faça isso com seeds.
+
 ## Ambiente e infraestrutura
 
 - Documente a versão do Docker/Docker Compose, variáveis necessárias e portas realmente usadas.
@@ -83,6 +100,8 @@ Repita a verificação para listas, busca por identificador, veículo, ordem, or
 - Crie índices para consultas reais, considerando tenant e filtros usados nas rotas; evite índices sem justificar custo de escrita e armazenamento.
 - Não compartilhe tabelas como atalho de integração entre microsserviços independentes.
 - Separe seed de demonstração de dados que poderiam ser confundidos com clientes reais.
+- Separe credenciais de runtime e operação; o papel da aplicação `platform_admin` não deve ter credencial de banco nem um endpoint de leitura dos dados de tenant. Logs e métricas não devem carregar texto de mensagens, placa, diagnóstico, orçamento ou dados pessoais.
+- Registre em ADR como o ambiente restringe e audita acesso técnico privilegiado aos bancos; uma tela sem permissão não é suficiente para cumprir a promessa de confidencialidade.
 - O escopo atual do MVP **não contém estoque interno**. Não criar tabelas, containers ou testes de inventário sem uma decisão nova do grupo.
 
 ## Estratégia de testes
@@ -97,6 +116,7 @@ Priorize testes nas regras que podem causar acesso indevido ou inconsistência d
 6. Restrição de pagamentos ao saldo pendente e encerramento somente após quitação.
 7. Convite expirado, código incorreto, tentativas limitadas e token de uso único.
 8. Integrações com timeout, indisponibilidade e resposta inválida.
+9. Acesso negado do administrador da plataforma ao conteúdo de todos os domínios de tenant, incluindo rotas de relatório e exportação.
 
 O Documento 02 registra meta mínima de cobertura de 60% conforme sua métrica definida. A medição deve cobrir o código-fonte dos microsserviços e ser verificada no pipeline, segundo a redação aprovada pelo professor. Cobertura é uma métrica; ela não substitui testes de comportamento e segurança.
 
@@ -122,6 +142,8 @@ Defina os comandos exatos depois que a estrutura final de código estiver neste 
 - [ ] Testes cobrem acesso entre tenants permitido e negado.
 - [ ] O cálculo de cobertura corresponde ao escopo do RNF aprovado.
 - [ ] Seeds cobrem as cinco oficinas e os casos de cliente multi-oficina.
+- [ ] A conta de administrador da plataforma acessa somente observabilidade agregada; nenhuma rota retorna conteúdo operacional.
+- [ ] Segredos e permissões de infraestrutura/banco estão separados das permissões do usuário administrador da aplicação e têm trilha de auditoria.
 - [ ] `.env` e credenciais não aparecem no diff.
 - [ ] Instruções de setup e recuperação foram atualizadas.
 - [ ] Logs não contêm token, senha, código temporário nem dados pessoais.
