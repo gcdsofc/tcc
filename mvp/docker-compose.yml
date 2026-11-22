@@ -1,0 +1,53 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: oficina
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local_dev_only}
+      POSTGRES_DB: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oficina"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  identity:
+    build: { context: ., dockerfile: services/Dockerfile }
+    command: ["node", "services/identity/index.js"]
+    environment:
+      PORT: 3001
+      DATABASE_URL: postgres://oficina:${POSTGRES_PASSWORD:-local_dev_only}@postgres:5432/identitydb
+      JWT_SECRET: ${JWT_SECRET:-change-this-local-secret}
+      SERVICE_SECRET: ${SERVICE_SECRET:-local-service-secret}
+      CUSTOMER_URL: http://customers:3002
+      WORKORDERS_URL: http://workorders:3003
+      BOOTSTRAP_DEMO: "true"
+    depends_on: { postgres: { condition: service_healthy } }
+  customers:
+    build: { context: ., dockerfile: services/Dockerfile }
+    command: ["node", "services/customers/index.js"]
+    environment:
+      PORT: 3002
+      DATABASE_URL: postgres://oficina:${POSTGRES_PASSWORD:-local_dev_only}@postgres:5432/customersdb
+      JWT_SECRET: ${JWT_SECRET:-change-this-local-secret}
+      SERVICE_SECRET: ${SERVICE_SECRET:-local-service-secret}
+      IDENTITY_URL: http://identity:3001
+    depends_on: { postgres: { condition: service_healthy }, identity: { condition: service_started } }
+  workorders:
+    build: { context: ., dockerfile: services/Dockerfile }
+    command: ["node", "services/workorders/index.js"]
+    environment:
+      PORT: 3003
+      DATABASE_URL: postgres://oficina:${POSTGRES_PASSWORD:-local_dev_only}@postgres:5432/workordersdb
+      JWT_SECRET: ${JWT_SECRET:-change-this-local-secret}
+      CUSTOMER_URL: http://customers:3002
+      SERVICE_SECRET: ${SERVICE_SECRET:-local-service-secret}
+    depends_on: { postgres: { condition: service_healthy }, customers: { condition: service_started } }
+  web:
+    build: { context: ., dockerfile: web/Dockerfile }
+    ports: ["8080:80"]
+    depends_on: [identity, customers, workorders]
+volumes:
+  pgdata:

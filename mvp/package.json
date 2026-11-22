@@ -1,0 +1,26 @@
+{
+  "name": "oficinapro-mvp",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "services/*",
+    "web"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w @oficinapro/identity\" \"npm run dev -w @oficinapro/customers\" \"npm run dev -w @oficinapro/workorders\" \"npm run dev -w @oficinapro/web\"",
+    "test": "npm run test -w @oficinapro/workorders && npm run test -w @oficinapro/customers",
+    "build": "npm run build -w @oficinapro/web",
+    "smoke": "node scripts/smoke.mjs",
+    "platform-check": "node scripts/platform-check.mjs"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
