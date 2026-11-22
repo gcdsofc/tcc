@@ -21,9 +21,9 @@ O OficinaPro organiza esse processo em uma aplicação: atendimento e equipe reg
 - **Seleção da oficina ativa:** depois do login, a pessoa escolhe uma oficina para trabalhar. As permissões são específicas daquele vínculo.
 - **Isolamento por oficina:** cada consulta e alteração deve ser autorizada no servidor e limitada à oficina ativa. Saber ou alterar um identificador na URL não concede acesso.
 - **Identidade visual:** a tela de trabalho identifica a oficina selecionada. No MVP, a marca GarageOps continua sendo a identidade da plataforma; nome e cor da oficina podem diferenciá-la dentro do sistema.
-- **Acesso do cliente:** o cliente usa sua conta GarageOps. A oficina cadastra o perfil local e envia um convite ao telefone registrado; o cliente confirma o código antes de ativar ou aceitar o vínculo.
+- **Acesso do cliente:** o cliente usa sua conta GarageOps. A oficina cadastra o perfil local e envia um convite ao telefone registrado; o cliente confirma o código antes de ativar ou aceitar o vínculo. Na ativação, nome e e-mail vêm do cadastro da oficina; se o telefone já tiver conta GarageOps, o cliente entra com ela em vez de criar outra.
 
-O administrador da oficina gerencia os vínculos da equipe no próprio tenant. O administrador da plataforma GarageOps tem uma área técnica separada, mas **não pode ler, pesquisar, exportar nem alterar o conteúdo operacional das oficinas**. O protótipo acadêmico atual usa contas fictícias; a matriz de papéis e a tela técnica da plataforma precisam ser implementadas e comprovadas no sistema final.
+O administrador da oficina gerencia os vínculos da equipe no próprio tenant. O administrador da plataforma GarageOps tem um console separado onde cadastra, edita, suspende e exclui oficinas. Ele conhece o cadastro de cada oficina que criou, mas **não pode ler, pesquisar, exportar nem alterar o conteúdo operacional das oficinas**. O protótipo acadêmico atual usa contas fictícias e já demonstra esse console; a matriz de papéis completa ainda precisa ser implementada e comprovada no sistema final.
 
 O cliente não precisa manter uma conta distinta para cada oficina. Sua identidade é única, mas cada oficina mantém seus próprios cadastros e atendimentos. Se a mesma pessoa levar carros a oficinas diferentes, os registros de cada local continuam separados e aparecem identificados pela oficina de origem.
 
@@ -33,7 +33,7 @@ Todos usam a mesma aplicação web. O sistema apresenta navegação e áreas ade
 
 | Papel | Área principal da aplicação | Pode fazer | Limite obrigatório |
 |---|---|---|---|
-| Administrador da plataforma GarageOps | Console técnico da plataforma | Acompanhar saúde global, métricas agregadas e estado técnico referenciado por identificador opaco do tenant | Não vê nome, documento, contato ou endereço da oficina; não pode abrir, pesquisar, exportar ou alterar clientes, veículos, diagnósticos, ordens, orçamentos, mensagens ou pagamentos, pela interface ou API |
+| Administrador da plataforma GarageOps | Console técnico da plataforma | Cadastrar, editar, suspender e excluir oficinas; ver o cadastro de cada oficina (nome, identificador, identidade visual (cor) e situação (ativa ou suspensa)); acompanhar saúde global e métricas agregadas, como quantidade de contas por oficina | Não pode abrir, pesquisar, exportar ou alterar clientes, veículos, diagnósticos, ordens, orçamentos, valores, mensagens ou pagamentos, pela interface ou API |
 | Administrador da oficina | Painel e configurações da oficina ativa | Gerenciar membros e papéis daquele tenant; acompanhar ordens e operação conforme permissões concedidas | Só administra o próprio tenant; não existe papel global de administrador de oficina |
 | Atendente | Atendimento | Cadastrar clientes e veículos locais, abrir ordens, acompanhar o fluxo e apoiar a comunicação/orçamento | Não executa ações técnicas ou financeiras sem permissão específica |
 | Mecânico | Oficina / execução técnica | Registrar diagnóstico, recomendar serviços, consultar orçamento aprovado e lançar serviços executados | Não inicia execução antes da aprovação vigente; não registra pagamento, salvo se também receber esse papel |
@@ -44,7 +44,7 @@ O cliente não é membro da equipe. Seu perfil local está vinculado à identida
 
 ### Confidencialidade para a oficina
 
-O papel de administrador da plataforma é separado dos papéis de oficina. O console da GarageOps não terá telas com nome, documento, contato ou endereço da oficina, nem tela de atendimento, busca de cliente ou acesso a conteúdo de ordens. As APIs também negarão essas operações. A operação técnica usará saúde global, métricas agregadas e, quando necessário, um identificador opaco e o estado técnico do tenant. Os testes devem tentar acessar esses dados pela interface e diretamente pela API e comprovar a negativa.
+O papel de administrador da plataforma é separado dos papéis de oficina. O console da GarageOps mostra apenas o cadastro das oficinas (nome, identificador, identidade visual (cor) e situação (ativa ou suspensa)), porque é o próprio administrador da plataforma quem as cria e mantém, além de saúde global e métricas agregadas, como a quantidade de contas de equipe e de clientes. Não terá tela de atendimento, busca de cliente, valores ou acesso a conteúdo de ordens; as APIs também negarão essas operações. Excluir uma oficina apaga os dados dela em cada serviço sem que o administrador da plataforma os veja. Os testes devem tentar acessar esses dados pela interface e diretamente pela API e comprovar a negativa.
 
 Essa regra descreve o controle de acesso do produto. A arquitetura de credenciais de infraestrutura e banco deve ser revisada separadamente para que privilégios técnicos não virem um caminho informal de acesso ao conteúdo.
 
@@ -91,7 +91,7 @@ Essa regra descreve o controle de acesso do produto. A arquitetura de credenciai
 - Gerenciamento completo dos usuários internos e dos papéis da equipe; no protótipo, as contas de demonstração são pré-carregadas.
 - Landing page comercial externa.
 - Aplicativo nativo distribuído pela Google Play ou App Store.
-- Pagamento real integrado a um provedor. O registro de pagamento no protótipo é demonstrativo/manual.
+- Pagamento online por provedor de pagamento, inclusive em sandbox. O cliente paga no local e o financeiro registra o pagamento no sistema.
 - Envio real de SMS, e-mail, WhatsApp ou notificações push. O código de convite é simulado no ambiente local.
 - Implantação comercial pronta para clientes reais.
 
@@ -145,7 +145,7 @@ Esta é a direção técnica planejada para o TCC; não significa que todos os c
 | Prometheus e Grafana | Métricas de saúde e desempenho | Observabilidade do sistema; dashboards não devem expor conteúdo ou dados identificáveis das oficinas |
 | Jest, Supertest e React Testing Library | Testes de backend e frontend | Validar regras, autorização, contratos e estados visuais |
 
-As integrações previstas incluem ViaCEP e referência veicular (FIPE ou equivalente); pagamento deve ficar em sandbox, se mantido nos requisitos aprovados. O grupo deve evitar criar serviço ou integração sem requisito e justificativa. Cada microsserviço precisa executar e implantar independentemente, ter contrato versionado e ser dono dos próprios dados. Nenhum serviço consulta diretamente o banco de outro; integrações passam por API ou evento documentado.
+As integrações externas são ViaCEP (endereço do cliente pelo CEP) e FIPE (marca, modelo e ano do veículo), ambas com preenchimento manual se a API falhar. O pagamento é feito no local e registrado pelo financeiro; pagamento online, inclusive em sandbox, fica como evolução futura. O grupo deve evitar criar serviço ou integração sem requisito e justificativa. Cada microsserviço precisa executar e implantar independentemente, ter contrato versionado e ser dono dos próprios dados. Nenhum serviço consulta diretamente o banco de outro; integrações passam por API ou evento documentado.
 
 ## Requisitos de segurança e qualidade
 
@@ -188,6 +188,43 @@ As pastas `equipe/<nome>` guardam o guia e materiais de planejamento daquele int
 | Modelo, migrações, ambiente, seeds e pipeline | Gabriel | Modelo alinhado com Thiago; casos de negócio aprovados por Eloisa; ambiente consumido por Matheus e Thiago |
 
 Antes de iniciar código, o grupo deve aprovar a estrutura compartilhada e manter uma fonte única dos contratos, preferencialmente OpenAPI para HTTP e esquemas versionados para eventos. Mudanças em contrato, campos ou estados exigem PR coordenado entre produtor e consumidor.
+
+## O que o professor exige e quem cuida
+
+Fonte: `aceite-projeto-experimental.md` e `termo-aceite-banca-5semestre.md` no [repositório de documentação](https://github.com/gcdsofc/UniFAAT-projeto-experimental-2027-1). No 4º semestre a entrega é **os 8 documentos + um MVP funcional**; no 5º semestre, o sistema completo em nuvem e a banca. Para ir à banca, os 10 critérios (C1 a C10) precisam estar atendidos.
+
+### Os 8 documentos
+
+| Doc | Documento | Encontro sugerido | Responsável | Revisão obrigatória | Situação |
+|---|---|---|---|---|---|
+| — | README do grupo (integrantes, RA, descrição, tecnologias) | 1º | Gabriel | Todos | Entregue |
+| 01 | Solicitação do Sistema | 2º | Gabriel | Eloisa | Entregue; Eloisa mantém atualizado |
+| 02 | Requisitos Funcionais e Não Funcionais | 3º | Gabriel | Eloisa | Entregue; Eloisa mantém atualizado |
+| 03 | Diagrama de Fluxo de Dados | 4º | Gabriel | Thiago | Entregue |
+| 04 | Modelo Entidade-Relacionamento | 4º | Gabriel | Thiago | Entregue |
+| 05 | Desenho de Arquitetura em Nuvem (AWS, rede, Terraform, custos) | 5º | Gabriel | Thiago | A fazer |
+| 06 | C4 Model (Contexto, Contêineres e Componentes) | 6º | Thiago | Matheus e Gabriel | A fazer |
+| 07 | Registro de Decisões Arquitetônicas (ADR) | 7º | Matheus (consolida) | Cada integrante escreve os ADRs da própria área | A fazer |
+| 08 | Planejamento de Sprints e Tarefas | 8º | Eloisa | Todos | A fazer |
+
+Regras das PRs para o professor: alterar **somente** a pasta `Projetos/OficinaPro`, uma PR por encontro e título no formato `[GarageOps] - Entrega N - Descrição`. PR que mexe no README raiz, em `templates/` ou em pasta de outro grupo é reprovada.
+
+### Critérios C1 a C10 da banca
+
+| ID | Critério | Responsável principal | Como comprovar |
+|---|---|---|---|
+| C1 | Arquitetura de microsserviços | Thiago | Serviços com banco próprio, implantação independente e contratos documentados |
+| C2 | Pelo menos uma API externa relevante | Thiago (backend) e Matheus (tela) | ViaCEP no cadastro do cliente e FIPE no cadastro do veículo, ambos com preenchimento manual se a API falhar (já no MVP) |
+| C3 | Banco com justificativa técnica | Gabriel | ADR do PostgreSQL e Documento 04 |
+| C4 | Deploy em nuvem (AWS) | Gabriel | Sistema acessível na AWS no dia da banca |
+| C5 | Infraestrutura com Terraform | Gabriel | Todo recurso AWS criado por Terraform, sem ClickOps |
+| C6 | CI/CD com GitHub Actions | Gabriel | Build, testes e deploy automáticos dos microsserviços |
+| C7 | Cobertura de testes ≥ 60% global | Gabriel (medição) e todos (testes) | Relatório de cobertura no pipeline somando todos os serviços |
+| C8 | Prometheus e Grafana funcionando | Gabriel (stack) e Thiago (métricas nos serviços) | Dashboard acessível na banca, sem dados de clientes |
+| C9 | 8 documentos completos e atualizados | Eloisa (acompanha) e cada responsável | Tabela acima com tudo entregue e coerente com o sistema |
+| C10 | Encontros com evolução | Eloisa (registro) e todos | Ficha de cada encontro e **1 commit por integrante por semana** |
+
+Contingência da banca: se a internet cair, a demonstração pode ser feita com Docker Compose, por isso o `docker-compose.yml` precisa continuar funcionando até o fim.
 
 ## Responsabilidades do grupo
 

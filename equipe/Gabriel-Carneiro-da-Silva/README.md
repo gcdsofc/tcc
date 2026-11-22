@@ -41,6 +41,25 @@ Este guia organiza a preparação dos dados e do ambiente, a verificação autom
 6. Plano mínimo de observabilidade que entregue métricas agregadas e logs sanitizados, sem conteúdo de cliente ou ordem.
 7. Instruções de setup e recuperação verificadas por um colega em clone limpo.
 
+## Documentos e exigências do professor sob sua responsabilidade
+
+| Item | O que o professor pede | Situação |
+|---|---|---|
+| README do grupo e Documentos 01 a 04 | Preenchidos com dados reais, sem texto genérico do template | Entregues; manter coerentes com o MVP junto com Eloisa |
+| Documento 05 — Arquitetura em Nuvem | Diagrama oficial dos serviços AWS, rede, inventário de recursos, security groups, módulos Terraform, state e estimativa de custos | A fazer (5º encontro) |
+| C3, C4, C5, C6, C7, C8 | Banco justificado, deploy na AWS, Terraform, GitHub Actions, cobertura ≥ 60% e Prometheus + Grafana | Planejar no Documento 05 e implementar no 5º semestre |
+
+Como fazer o Documento 05:
+
+1. Copie `templates/05-arquitetura-nuvem.md` para `Projetos/OficinaPro/05-arquitetura-nuvem.md`; não altere o template original.
+2. Desenhe a VPC com subnets públicas e privadas: só o load balancer fica exposto; serviços, PostgreSQL e RabbitMQ ficam em subnet privada.
+3. Preencha o inventário pensando no custo acadêmico: contêineres dos microsserviços (ECS Fargate ou EC2 com Docker), RDS PostgreSQL com um banco por serviço, Amazon MQ ou RabbitMQ em contêiner, ECR para as imagens e o Grafana/Prometheus.
+4. Na seção de Terraform, descreva os módulos (rede, banco, serviços, monitoramento) e onde fica o state (S3 com lock).
+5. Na estimativa de custos, use free tier quando possível e registre que o ambiente será desligado fora das demonstrações.
+6. Os ADRs de nuvem, banco e containerização (ADR-002, ADR-004 e ADR-005 do template 07) são seus; entregue o texto para o Matheus consolidar.
+
+O Documento 05 deve bater com os Documentos 03 e 04: mesmos serviços, mesmos bancos e o mesmo limite de acesso do administrador da plataforma.
+
 ## Exemplo de modelagem de um perfil de cliente por oficina
 
 Exemplo didático de estrutura relacional; alinhe nomes e tipos com o modelo lógico e o serviço que será dono da tabela:
@@ -80,7 +99,7 @@ Repita a verificação para listas, busca por identificador, veículo, ordem, or
 
 ### Verificação negativa do administrador da plataforma
 
-Prepare uma conta com somente o papel de administrador GarageOps. Confirme que ela consegue ver saúde global e métricas agregadas e, se necessário, estado técnico por identificador opaco. Confirme que não consegue obter nome, documento, contato ou endereço da oficina, nem conteúdo de clientes, veículos, diagnósticos, ordens, orçamentos, mensagens ou pagamentos pela UI ou API. Inclua consultas por ID conhecido, filtros, exportações e endpoints de relatórios. Não use dados reais; faça isso com seeds.
+Prepare uma conta com somente o papel de administrador GarageOps. Confirme que ela consegue cadastrar, editar, suspender e excluir oficinas e ver o cadastro delas (nome, identificador, identidade visual (cor) e situação (ativa ou suspensa)), saúde global e métricas agregadas. Confirme que não consegue obter conteúdo de clientes, veículos, diagnósticos, ordens, orçamentos, valores, mensagens ou pagamentos pela UI ou API. Inclua consultas por ID conhecido, filtros, exportações e endpoints de relatórios. Não use dados reais; faça isso com seeds.
 
 ## Ambiente e infraestrutura
 
@@ -142,7 +161,7 @@ Defina os comandos exatos depois que a estrutura final de código estiver neste 
 - [ ] Testes cobrem acesso entre tenants permitido e negado.
 - [ ] O cálculo de cobertura corresponde ao escopo do RNF aprovado.
 - [ ] Seeds cobrem as cinco oficinas e os casos de cliente multi-oficina.
-- [ ] A conta de administrador da plataforma acessa somente observabilidade agregada; nenhuma rota retorna conteúdo operacional.
+- [ ] A conta de administrador da plataforma acessa somente o cadastro das oficinas e a observabilidade agregada; nenhuma rota retorna conteúdo operacional.
 - [ ] Segredos e permissões de infraestrutura/banco estão separados das permissões do usuário administrador da aplicação e têm trilha de auditoria.
 - [ ] `.env` e credenciais não aparecem no diff.
 - [ ] Instruções de setup e recuperação foram atualizadas.

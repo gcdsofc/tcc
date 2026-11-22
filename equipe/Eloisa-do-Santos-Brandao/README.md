@@ -16,6 +16,22 @@ Este guia ajuda a transformar as necessidades do OficinaPro em prioridades e cri
 - Manter a matriz de papéis alinhada às áreas da aplicação, inclusive a restrição de acesso do administrador da plataforma.
 - Manter os documentos acadêmicos e este README consistentes quando o grupo aprovar uma mudança.
 
+## Documentos e exigências do professor sob sua responsabilidade
+
+| Item | O que o professor pede | Situação |
+|---|---|---|
+| Documentos 01 e 02 | Solicitação do sistema e requisitos priorizados | Entregues; você mantém atualizados quando o grupo aprovar mudança |
+| Documento 08 — Planejamento de Sprints | Sprints com tarefas, responsável por tarefa e sprint de entrega, refletindo a metodologia ágil | A fazer (8º encontro) |
+| C9 e C10 | 8 documentos completos e atualizados; encontros com evolução e 1 commit por integrante por semana | Acompanhar e avisar o grupo quando algo atrasar |
+
+Como fazer o Documento 08:
+
+1. Copie `templates/08-planejamento-sprints-tarefas.md` para `Projetos/OficinaPro/08-planejamento-sprints-tarefas.md`.
+2. Monte o backlog a partir dos RFs do Documento 02, com prioridade e estimativa; cada história aponta o RF de origem.
+3. Distribua as sprints até a banca do 5º semestre: MVP e documentos no 4º; deploy AWS com Terraform, CI/CD, monitoramento e cobertura ≥ 60% no 5º.
+4. Toda tarefa precisa de responsável. Use a tabela "O que o professor exige e quem cuida" do README principal para não deixar critério sem dono.
+5. Registre as cerimônias (planejamento, revisão, retrospectiva) e onde ficam as evidências, por exemplo o quadro de tarefas e as fichas de encontro.
+
 ## Passo a passo para trabalhar em uma demanda
 
 1. **Entenda o problema antes da solução.** Converse com o grupo: quem sente a dificuldade, em que momento e qual consequência ela causa?
@@ -41,7 +57,7 @@ Este guia ajuda a transformar as necessidades do OficinaPro em prioridades e cri
 
 | Papel | Necessidades que você transforma em histórias |
 |---|---|
-| Administrador da plataforma | Ver saúde global, métricas agregadas e estado técnico por identificador opaco; não ver dados cadastrais da oficina ou conteúdo operacional |
+| Administrador da plataforma | Cadastrar, editar, suspender e excluir oficinas; ver o cadastro delas (nome, identificador, identidade visual (cor) e situação (ativa ou suspensa)), saúde global e métricas agregadas; não ver conteúdo operacional (clientes, veículos, diagnósticos, ordens, orçamentos, valores, mensagens ou pagamentos) |
 | Administrador da oficina | Gerenciar usuários e papéis somente no tenant próprio; supervisionar a operação |
 | Atendente | Cadastrar cliente/veículo e abrir ordem no tenant ativo |
 | Mecânico | Diagnosticar e registrar serviços apenas após aprovação do orçamento vigente |
@@ -69,9 +85,9 @@ O exemplo mostra a forma de detalhar; IDs, prioridades e redação oficial devem
 
 ## Exemplo adicional: isolamento do administrador da plataforma
 
-> **História:** como administrador da plataforma GarageOps, quero acompanhar a disponibilidade técnica do SaaS sem visualizar dados das oficinas.
+> **História:** como administrador da plataforma GarageOps, quero cadastrar e manter as oficinas e acompanhar a disponibilidade técnica do SaaS sem visualizar os dados operacionais delas.
 >
-> **Aceite:** o console mostra saúde global, falhas técnicas e métricas agregadas; não revela nome, documento, contato ou endereço da oficina; tentativas de consultar clientes, veículos, diagnósticos, ordens, orçamentos, mensagens ou pagamentos são negadas pela API e não retornam conteúdo. O administrador da oficina continua acessando apenas o próprio tenant.
+> **Aceite:** o console permite cadastrar, editar, suspender e excluir oficinas e mostra o cadastro delas (nome, identificador, identidade visual (cor) e situação (ativa ou suspensa)), saúde global, falhas técnicas e métricas agregadas; tentativas de consultar clientes, veículos, diagnósticos, ordens, orçamentos, mensagens ou pagamentos são negadas pela API e não retornam conteúdo. O administrador da oficina continua acessando apenas o próprio tenant.
 
 Este exemplo está alinhado à decisão aprovada. Use-o para detalhar critérios e casos negativos, sem acrescentar uma função de suporte que leia os dados do tenant.
 

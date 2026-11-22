@@ -17,6 +17,24 @@ Este guia orienta a implementação das regras do OficinaPro no servidor e a com
 - Documentar mudanças de contrato e riscos de integração.
 - Implementar autorização distinta para administrador da plataforma e papéis vinculados às oficinas.
 
+## Documentos e exigências do professor sob sua responsabilidade
+
+| Item | O que o professor pede | Situação |
+|---|---|---|
+| Documento 06 — C4 Model | Três níveis obrigatórios: Contexto, Contêineres e Componentes | A fazer (6º encontro) |
+| C1 — Microsserviços | Arquitetura de microsserviços de verdade, não um monólito dividido em pastas | Base no MVP (identidade, clientes/veículos e ordens com bancos separados) |
+| C2 — API externa | Pelo menos uma API externa relevante para a regra de negócio | ViaCEP (cliente) e FIPE (veículo) funcionando no MVP, passando pelo serviço de clientes e com preenchimento manual se a API falhar |
+| C8 — métricas | Serviços expondo métricas para o Prometheus | A fazer no 5º semestre (`/metrics` em cada serviço) |
+
+Como fazer o Documento 06:
+
+1. Copie `templates/06-c4-model.md` para `Projetos/OficinaPro/06-c4-model.md`.
+2. **Contexto:** o OficinaPro no centro; equipe da oficina, cliente e administrador da plataforma como pessoas; ViaCEP, FIPE e o canal de envio de código como sistemas externos.
+3. **Contêineres:** a aplicação web, cada microsserviço com o seu banco PostgreSQL, o RabbitMQ e a stack Prometheus/Grafana. Mostre que nenhum serviço acessa o banco de outro.
+4. **Componentes:** detalhe pelo menos o Auth Service e o Work Order Service (controllers, verificação de tenant e papel, regras de orçamento, cliente HTTP para outros serviços).
+5. Use os mesmos nomes de serviço dos Documentos 03, 04 e 05. Peça revisão ao Matheus (contêiner web) e ao Gabriel (infraestrutura).
+6. Os ADRs de backend e comunicação entre serviços (ADR-001 e ADR-003 do template 07) são seus; entregue o texto para o Matheus consolidar.
+
 ## Antes de começar uma tarefa
 
 1. Leia o requisito e os critérios de aceite aprovados.
@@ -39,7 +57,7 @@ Em cada endpoint, verifique:
 - a transição de estado é válida naquele momento;
 - erros não revelam dados de outra oficina.
 
-Para endpoints de administração da plataforma, não basta não definir `tenantId`: eles devem retornar saúde global, métricas agregadas e estado técnico ligado somente a identificador opaco. Não retorne nome, documento, contato ou endereço da oficina. Não crie endpoints de suporte para buscar cliente, veículo, diagnóstico, ordem, orçamento, mensagem ou pagamento.
+Para endpoints de administração da plataforma, não basta não definir `tenantId`: eles devem exigir o papel global de plataforma e retornar somente o cadastro das oficinas (nome, identificador, identidade visual (cor) e situação (ativa ou suspensa)), saúde global e métricas agregadas. A exclusão de uma oficina deve pedir a cada serviço que apague os próprios dados, sem devolvê-los ao console. Não crie endpoints de suporte para buscar cliente, veículo, diagnóstico, ordem, orçamento, mensagem ou pagamento.
 
 ## Exemplo de contrato: abrir ordem de serviço
 
@@ -99,7 +117,7 @@ No MVP atual, não existe catálogo ou saldo interno de peças: a peça é descr
 - Use chave idempotente quando reprocessar a mesma operação puder criar duplicação.
 - Não use uma transação de banco compartilhada entre serviços independentes.
 - Não armazene tokens, códigos de convite, senhas ou segredos nos logs.
-- Evite criar uma API/integrador externo sem requisito e decisão aprovada. ViaCEP aparece nos documentos planejados; demais integrações precisam ser validadas.
+- Evite criar uma API/integrador externo sem requisito e decisão aprovada. As integrações aprovadas são ViaCEP (endereço) e FIPE (veículo). Pagamento online, inclusive em sandbox, ficou para o futuro; qualquer outra integração precisa de requisito e decisão aprovada.
 
 ## Entregas e contratos para integração
 

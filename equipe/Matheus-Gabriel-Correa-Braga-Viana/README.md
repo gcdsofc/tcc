@@ -15,7 +15,22 @@ Este guia ajuda a construir uma interface clara para as rotinas da oficina e do 
 - Adaptar a navegação para computador e celular, com atenção à acessibilidade.
 - Evitar informações falsas: listas, contadores e estados devem vir dos serviços.
 - Testar os caminhos da equipe e do cliente com diferentes papéis e vínculos.
-- Projetar áreas distintas para os seis papéis, especialmente o console técnico sem dados de oficinas para o administrador da plataforma.
+- Projetar áreas distintas para os seis papéis, especialmente o console do administrador da plataforma, que gerencia o cadastro das oficinas sem mostrar os dados operacionais delas.
+
+## Documentos e exigências do professor sob sua responsabilidade
+
+| Item | O que o professor pede | Situação |
+|---|---|---|
+| Documento 07 — ADR | Decisões técnicas relevantes com contexto, decisão, alternativas consideradas e consequências | A fazer (7º encontro); você consolida e cada integrante escreve os ADRs da própria área |
+| C2 — API externa na tela | A integração precisa ser vista funcionando na demonstração | Já no MVP: endereço pelo CEP (ViaCEP) no cadastro do cliente e listas de marca, modelo e ano (FIPE) no cadastro do veículo, ambos com preenchimento manual |
+
+Como fazer o Documento 07:
+
+1. Copie `templates/07-registro-decisoes-arquitetonicas-adr.md` para `Projetos/OficinaPro/07-registro-decisoes-arquitetonicas-adr.md`.
+2. Combine a numeração e os autores antes de escrever: ADR-001 backend e ADR-003 comunicação entre serviços (Thiago); ADR-002 banco, ADR-004 nuvem e ADR-005 containerização (Gabriel); frontend e acesso por papel (você); SaaS multi-tenant e isolamento por tenant (Eloisa revisa a regra de negócio).
+3. Inclua também as decisões que já foram tomadas e aparecem nos outros documentos: sem estoque interno, conta global com vínculo por oficina, orçamento versionado e administrador da plataforma sem acesso aos dados operacionais.
+4. Cada ADR precisa de alternativas reais e consequências negativas também; o professor reprova texto genérico.
+5. Confira se o Documento 06 (seção de ADRs resumidos) usa os mesmos números e títulos.
 
 ## Fluxos de interface a cobrir
 
@@ -34,7 +49,7 @@ Use esta matriz como base para navegação e estados de tela. A permissão final
 
 | Papel | Área e telas esperadas | Ações que a interface deve oferecer |
 |---|---|---|
-| Administrador da plataforma | Console GarageOps: saúde global, falhas técnicas e métricas agregadas | Filtrar indicadores técnicos; usar somente identificador opaco para estado do tenant; não exibir dados cadastrais nem busca por cliente, placa, ordem ou mensagem |
+| Administrador da plataforma | Console GarageOps: cadastro das oficinas, saúde global, falhas técnicas e métricas agregadas | Cadastrar, editar, suspender e excluir oficinas (nome, identificador, identidade visual (cor) e situação (ativa ou suspensa)); filtrar indicadores técnicos; não exibir nem buscar cliente, placa, ordem, valor ou mensagem |
 | Administrador da oficina | Início da oficina ativa, equipe/vínculos e operação | Gerenciar membros e papéis somente da oficina selecionada; acompanhar ordens segundo as permissões concedidas |
 | Atendente | Atendimento, clientes, veículos e abertura/acompanhamento de ordens | Cadastrar e localizar registros locais, abrir ordem, acompanhar aprovação e comunicação |
 | Mecânico | Fila técnica e detalhe da ordem | Registrar diagnóstico e serviços; visualizar claramente a versão aprovada; ações de execução ficam indisponíveis até a aprovação |
@@ -71,9 +86,9 @@ O frontend não deve presumir que clicar no botão significa que a decisão foi 
 
 ## Exemplo: console do administrador da plataforma
 
-- Mostrar somente saúde técnica, métricas agregadas e mensagens de erro sanitizadas.
-- Identificar estado técnico do tenant somente por identificador opaco, se essa operação for necessária.
-- Não exibir nome, documento, contato ou endereço da oficina.
+- Listar as oficinas com o cadastro delas (nome, identificador, identidade visual (cor) e situação (ativa ou suspensa)) e permitir cadastrar, editar, suspender e excluir.
+- Exigir confirmação explícita para excluir, explicando que os dados da oficina serão apagados; oferecer a suspensão como alternativa.
+- Além do cadastro, mostrar somente saúde técnica, métricas agregadas (como quantidade de contas) e mensagens de erro sanitizadas.
 - Não mostrar lista de clientes, veículos, ordens, orçamentos, mensagens ou pagamentos.
 - Não criar busca “para suporte” que consulte o conteúdo da oficina.
 - Se o backend negar uma rota, mostrar um estado de acesso não permitido sem repetir dados da resposta.
