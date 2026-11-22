@@ -4,6 +4,8 @@
 **Material revisado:** `parte-do-thiago.zip` (base NestJS + TypeScript, arquivos de 18/11/2026)
 **Como foi verificado:** `npm install`, `npm test` e `npm run build` numa cópia limpa, além da leitura de todos os arquivos e da comparação com o [seu guia](README.md), com o [README do grupo](../../README.md) e com o MVP atual.
 
+> **Atualização (22/11/2026):** o grupo decidiu migrar o MVP para a sua base em NestJS + TypeScript, e a migração já foi feita e testada. Os itens 1, 2 e 3 abaixo foram resolvidos nela (build, `BusinessException` e contrato do token com `scope`, `activeTenantId`, emissor verificado e papel `tenant_admin`). O código está em `backend/` no MVP. Continuam com você os itens 4 e 5 e a tabela "O que ainda falta", principalmente o Documento 06.
+
 ## Resumo
 
 A base está bem pensada e segue as regras de segurança do projeto. O problema é que ela ainda cobre uma parte pequena do que está no seu guia, e alguns contratos não batem com o que o MVP já faz. O mais urgente não é código: é o **Documento 06 (C4 Model)**, que é entrega do 4º semestre.
@@ -92,9 +94,9 @@ O seu `docs/contratos-e-decisoes.md` ainda diz que a plataforma vê só "informa
 
 O passo a passo do Documento 06 está no seu guia, na seção "Documentos e exigências do professor sob sua responsabilidade". Use os mesmos nomes de serviço dos Documentos 03 e 04.
 
-## Decisão para levarmos ao grupo
+## Decisão do grupo
 
-O MVP está em JavaScript + Express, e a sua base está em NestJS + TypeScript, como manda a documentação. Precisamos decidir **quando e como migrar o MVP para a sua base**, e quem faz cada parte, para não termos dois backends andando em paralelo. Minha sugestão: a sua base vira o padrão de cada microsserviço, e migramos um serviço por vez (identidade, depois clientes/veículos, depois ordens), sempre com os testes do MVP passando.
+Decidido em 22/11/2026: a sua base virou o padrão dos três microsserviços, e o MVP já foi migrado (identidade, clientes/veículos e ordens), com os testes de integração do MVP passando. Daqui para frente, os módulos novos seguem esse padrão.
 
 ## Próximos passos sugeridos
 

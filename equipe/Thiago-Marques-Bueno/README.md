@@ -149,7 +149,7 @@ src/
 └── main.ts
 ```
 
-O projeto-alvo planejado nos documentos usa Node.js, TypeScript e NestJS. O protótipo acadêmico exploratório usa Node.js/Express em JavaScript. Não misture decisões dos dois sem alinhar com o grupo; antes de adicionar dependências ou mudar a base, confirme a direção técnica do TCC.
+O MVP já foi migrado para NestJS + TypeScript a partir da sua base (`backend/libs/common` com token, guardas e filtro de erros; `backend/apps/identity`, `customers` e `workorders`). Novos módulos seguem esse padrão: toda rota declara `@TenantEndpoint`, `@AccountEndpoint`, `@PlatformEndpoint` ou `@Public`, e erros de regra usam `BusinessException`. Antes de adicionar dependências ou mudar a base, alinhe com o grupo.
 
 ## Checklist do Pull Request
 

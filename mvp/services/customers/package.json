@@ -1,1 +1,0 @@
-{"name":"@oficinapro/customers","version":"0.1.0","private":true,"scripts":{"dev":"node index.js","test":"node --test test/*.test.js"}}

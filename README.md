@@ -76,6 +76,7 @@ Essa regra descreve o controle de acesso do produto. A arquitetura de credenciai
 
 - Acesso da equipe e do cliente por uma aplicação web.
 - Uma conta GarageOps com vínculos independentes para várias oficinas.
+- Gestão da equipe pelo administrador da oficina: cadastrar, trocar papel e desativar membros, só na própria oficina.
 - Seleção de uma oficina ativa e controle de acesso por papel.
 - Cadastro de clientes e veículos por oficina.
 - Convite de cliente ao telefone cadastrado, com código temporário de uso limitado.
@@ -88,7 +89,7 @@ Essa regra descreve o controle de acesso do produto. A arquitetura de credenciai
 ### Fora do MVP atual
 
 - Estoque próprio, catálogo de peças, saldo de peças e baixa interna. A premissa atual é que muitas oficinas obtêm peças por meio de autopeças parceiras. Se uma peça for necessária no orçamento, ela é informada manualmente.
-- Gerenciamento completo dos usuários internos e dos papéis da equipe; no protótipo, as contas de demonstração são pré-carregadas.
+- Mais de um papel para a mesma pessoa na mesma oficina (por exemplo, atendente que também é financeiro); a regra ainda precisa ser decidida pelo grupo.
 - Landing page comercial externa.
 - Aplicativo nativo distribuído pela Google Play ou App Store.
 - Pagamento online por provedor de pagamento, inclusive em sandbox. O cliente paga no local e o financeiro registra o pagamento no sistema.
@@ -122,10 +123,12 @@ O protótipo acadêmico já exercitado usa:
 | Parte | Implementação do protótipo |
 |---|---|
 | Interface web | React e Vite |
-| Serviços HTTP | Node.js e Express, separados em identidade, clientes/veículos e ordens |
+| Serviços HTTP | NestJS + TypeScript, separados em identidade, clientes/veículos e ordens, com uma imagem Docker por serviço |
 | Persistência | PostgreSQL, com bancos separados por serviço no ambiente local |
 | Ambiente local | Docker Compose |
 | Acesso do navegador | Uma URL local, servida pelo container web |
+
+**Decisão do grupo (22/11/2026): migração para NestJS + TypeScript.** O MVP começou em Express + JavaScript e foi migrado para a stack dos documentos, usando como base a fundação de autenticação do Thiago (token com `scope`, política de acesso explícita por rota e erros padronizados). As rotas e respostas foram mantidas, então a interface não mudou. A migração foi validada pelos testes de integração (`smoke` e `platform-check`), num banco limpo e num banco com dados da versão anterior. O papel `owner` passou a se chamar `tenant_admin`. A decisão deve ser registrada como ADR no Documento 07.
 
 O protótipo serve para explorar o fluxo e validar regras com dados fictícios. Ele não deve ser descrito como produto pronto para operação real. A entrega final precisa seguir os requisitos e a arquitetura aprovados para o TCC, incluindo os itens obrigatórios de infraestrutura, implantação independente dos microsserviços, segurança, testes e observabilidade.
 
@@ -165,14 +168,21 @@ As integrações externas são ViaCEP (endereço do cliente pelo CEP) e FIPE (ma
 ```text
 .
 ├── README.md
-└── equipe/
-    ├── Eloisa-do-Santos-Brandao/README.md
-    ├── Thiago-Marques-Bueno/README.md
-    ├── Matheus-Gabriel-Correa-Braga-Viana/README.md
-    └── Gabriel-Carneiro-da-Silva/README.md
+├── equipe/
+│   ├── Eloisa-do-Santos-Brandao/README.md
+│   ├── Thiago-Marques-Bueno/README.md
+│   ├── Matheus-Gabriel-Correa-Braga-Viana/README.md
+│   └── Gabriel-Carneiro-da-Silva/README.md
+└── mvp/
+    ├── README.md            como executar, contas de demonstração, roteiro e testes
+    ├── docker-compose.yml   sistema completo local (porta 8080)
+    ├── backend/             microsserviços NestJS + TypeScript (identity, customers, workorders) e libs/common
+    ├── web/                 interface React + Vite
+    ├── infra/               nginx e criação dos bancos
+    └── scripts/             testes de integração (smoke, platform-check, team-check)
 ```
 
-Este repositório atualmente organiza a visão do sistema e o trabalho da equipe. Quando o código, o Docker Compose e as instruções de execução forem adicionados aqui, o README deve ser atualizado com comandos testados neste próprio repositório.
+O código do sistema fica em [`mvp/`](mvp/README.md). Para rodar: entre na pasta `mvp`, copie `.env.example` para `.env` e execute `docker compose up --build`. O sistema abre em `http://localhost:8080`. Os comandos de teste e as contas de demonstração estão no [README do MVP](mvp/README.md).
 
 Os documentos acadêmicos oficiais do projeto ficam no repositório separado de documentação: [OficinaPro — documentos do TCC](https://github.com/gcdsofc/UniFAAT-projeto-experimental-2027-1/tree/docs/garageops-entrega-3-dfd/Projetos/OficinaPro). Requisitos aprovados nesse repositório são a referência para implementação; este README explica o produto e orienta o trabalho da equipe.
 

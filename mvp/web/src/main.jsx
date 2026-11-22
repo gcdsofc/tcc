@@ -17,7 +17,7 @@ const api = async (path, { token, ...options } = {}) => {
     const offline = Error('Não foi possível falar com o servidor. Nada foi salvo; aguarde alguns segundos e tente novamente.'); offline.status = 0; throw offline;
   }
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) { const problem = Error(data.error || `Falha na solicitação (${response.status}).`); problem.status = response.status; throw problem; }
+  if (!response.ok) { const problem = Error(data.message || data.error || `Falha na solicitação (${response.status}).`); problem.status = response.status; throw problem; }
   return data;
 };
 
@@ -99,17 +99,17 @@ function App() {
   const [closeRefusalReason, setCloseRefusalReason] = useState('');
   const inviteToken = new URLSearchParams(location.search).get('token');
   const customerRole = office?.roles?.includes('customer');
-  const staff = office?.roles?.some(role => ['owner', 'attendant'].includes(role));
+  const staff = office?.roles?.some(role => ['tenant_admin', 'attendant'].includes(role));
   const mechanicRole = office?.roles?.includes('mechanic');
   const financeRole = office?.roles?.includes('finance');
-  const owner = office?.roles?.includes('owner');
-  const canRegister = office?.roles?.some(role => ['owner', 'attendant'].includes(role));
+  const owner = office?.roles?.includes('tenant_admin');
+  const canRegister = office?.roles?.some(role => ['tenant_admin', 'attendant'].includes(role));
   const canOpenOrders = canRegister;
-  const canDiagnose = office?.roles?.some(role => ['owner', 'mechanic'].includes(role));
-  const canCreateEstimate = office?.roles?.some(role => ['owner', 'attendant', 'mechanic'].includes(role));
+  const canDiagnose = office?.roles?.some(role => ['tenant_admin', 'mechanic'].includes(role));
+  const canCreateEstimate = office?.roles?.some(role => ['tenant_admin', 'attendant', 'mechanic'].includes(role));
   const canCloseRefusal = canRegister;
-  const canMessage = office?.roles?.some(role => ['owner', 'attendant', 'mechanic', 'customer'].includes(role));
-  const canFinance = office?.roles?.some(role => ['owner', 'finance'].includes(role));
+  const canMessage = office?.roles?.some(role => ['tenant_admin', 'attendant', 'mechanic', 'customer'].includes(role));
+  const canFinance = office?.roles?.some(role => ['tenant_admin', 'finance'].includes(role));
   const approvedEstimate = selected?.estimates?.find(estimate => estimate.status === 'approved');
   const paidAmount = (selected?.payments || []).reduce((total, payment) => total + Number(payment.amount || 0), 0);
   const outstandingAmount = Math.max(0, Number(approvedEstimate?.total || 0) - paidAmount);
@@ -135,7 +135,7 @@ function App() {
     const currentToken = activeToken || token;
     if (!currentToken) return;
     const allowedRoles = office?.roles || [];
-    const canReadPeople = allowedRoles.some(role => ['owner', 'attendant', 'mechanic', 'customer'].includes(role));
+    const canReadPeople = allowedRoles.some(role => ['tenant_admin', 'attendant', 'mechanic', 'customer'].includes(role));
     const [orderData, customerData, vehicleData] = await Promise.all([
       api('/api/orders/orders', { token: currentToken }),
       canReadPeople ? api('/api/customers/customers', { token: currentToken }) : Promise.resolve([]),
@@ -365,7 +365,7 @@ function App() {
   const navItems = [
     { id: 'home', label: customerRole ? 'Atendimentos' : mechanicRole ? 'Fila de serviços' : financeRole ? 'Ordens e pagamentos' : 'Visão geral', icon: '▦' },
     ...(staff ? [{ id: 'clients', label: 'Clientes', icon: '♙' }, { id: 'vehicles', label: 'Veículos', icon: '▰' }] : customerRole ? [{ id: 'vehicles', label: 'Meus veículos', icon: '▰' }] : mechanicRole ? [{ id: 'vehicles', label: 'Veículos da oficina', icon: '▰' }] : []),
-    ...(owner ? [{ id: 'invites', label: 'Acessos', icon: '✉' }] : []),
+    ...(owner ? [{ id: 'team', label: 'Equipe', icon: '♙' }, { id: 'invites', label: 'Acessos', icon: '✉' }] : []),
   ];
 
   return <div className="app-shell">
@@ -400,6 +400,8 @@ function App() {
           {canRegister && <section className="content-card"><div className="section-title"><div><span className="section-icon">▰</span><div><h2>Novo veículo</h2><p>Vincule o veículo a um cliente já cadastrado.</p></div></div></div>{!customers.length ? <div className="inline-empty">Cadastre um cliente antes de incluir um veículo. <button className="inline-link" onClick={() => setPage('clients')}>Ir para Clientes</button></div> : <form className="form-grid vehicle-form" onSubmit={event => act(() => addVehicle(event))}><label>Cliente<select name="customerId" required defaultValue=""><option value="" disabled>Selecione</option>{customers.map(customer => <option key={customer.id} value={customer.id}>{customer.name}</option>)}</select></label><label>Placa<input name="plate" required placeholder="ABC1D23" maxLength="8"/></label><VehicleReference token={token} value={vehicleRef} onChange={setVehicleRef}/><div className="form-actions"><button className="primary" disabled={busy}>Cadastrar veículo <span>→</span></button></div></form>}</section>}
           <section className="vehicle-grid">{vehicles.map(vehicle => <article className="vehicle-card" key={vehicle.id}><div className="vehicle-top"><span className="vehicle-symbol">▰</span><span className="plate-chip">{vehicle.plate}</span></div><h2>{vehicle.make || 'Marca não informada'} {vehicle.model || ''}</h2><p>{vehicle.year || 'Ano não informado'}{vehicle.customer_name ? ` · ${vehicle.customer_name}` : ''}</p><div className="vehicle-history">{orders.filter(order => order.vehicle_id === vehicle.id).map(order => <button className="history-link" key={order.id} onClick={() => loadOrder(order.id)}><span>{order.problem}</span><span className={`status-pill ${order.status}`}>{statusLabels[order.status] || order.status}</span></button>)}{!orders.some(order => order.vehicle_id === vehicle.id)&&<small>Nenhuma ordem registrada para este veículo.</small>}</div></article>)}{!vehicles.length&&<Empty title="Nenhum veículo cadastrado" detail="Os veículos aparecerão aqui após serem vinculados a um cliente."/>}</section>
         </>}
+
+        {page === 'team' && owner && <TeamPage token={token} user={user}/>}
 
         {page === 'invites' && owner && <><div className="page-heading"><div><p className="eyebrow">ACESSO AO PORTAL</p><h1>Convidar cliente</h1><p>O convite associa o cliente à oficina sem expor dados pelo link.</p></div></div><section className="content-card invite-card"><div className="invite-explainer"><span className="section-icon">✉</span><div><h2>Convite de acesso</h2><p>Enviaremos um link de uso único ao telefone registrado no cadastro do cliente.</p></div></div>{customers.length ? <form className="form-grid two-fields" onSubmit={event => act(() => makeInvite(event))}><label>Cliente cadastrado<select name="customerId" required defaultValue=""><option value="" disabled>Selecione o cliente</option>{customers.map(customer => <option key={customer.id} value={customer.id}>{customer.name} · {customer.phone}</option>)}</select></label><div className="form-actions"><button className="primary" disabled={busy}>Gerar convite <span>→</span></button></div></form> : <div className="inline-empty">Cadastre o cliente antes de gerar o convite. <button className="inline-link" onClick={() => setPage('clients')}>Ir para Clientes</button></div>}{inviteData&&<div className="invite-result"><b>Convite pronto para compartilhar</b><p>Validade: {new Date(inviteData.expiresAt).toLocaleString('pt-BR')}</p><label>Link de ativação<input readOnly value={`${location.origin}${inviteData.activationUrl}`}/></label><p className="invite-code">Código de demonstração: <b>{inviteData.devCode || 'enviado pelo canal configurado'}</b></p></div>}</section></>}
 
@@ -486,6 +488,90 @@ function VehicleReference({ token, value, onChange }) {
 const emptyAddress = { cep: '', street: '', addressNumber: '', district: '', city: '', state: '' };
 const brandPalette = ['#0f766e', '#2563eb', '#d97706', '#7c3aed', '#be123c', '#0891b2', '#4d7c0f', '#334155'];
 const emptyTenantForm = { name: '', slug: '', brandColor: brandPalette[0], ownerName: '', ownerEmail: '', ownerPhone: '', ownerPassword: '' };
+
+// Gestão da equipe pelo administrador da oficina (RF-005).
+const staffRoles = [
+  { id: 'tenant_admin', label: 'Administrador', plural: 'Administradores', tone: 'teal' },
+  { id: 'attendant', label: 'Atendente', plural: 'Atendentes', tone: 'blue' },
+  { id: 'mechanic', label: 'Mecânico', plural: 'Mecânicos', tone: 'amber' },
+  { id: 'finance', label: 'Financeiro', plural: 'Financeiro', tone: 'green' },
+];
+const emptyMember = { name: '', email: '', phone: '', role: 'attendant', password: '' };
+
+function TeamPage({ token, user }) {
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [adding, setAdding] = useState(false);
+  const [form, setForm] = useState(emptyMember);
+
+  const run = async (fn, success) => {
+    setError(''); setNotice(''); setBusy(true);
+    try { await fn(); if (success) setNotice(success); }
+    catch (problem) { setError(problem.message); }
+    finally { setBusy(false); }
+  };
+  const load = () => api('/api/identity/team', { token }).then(setMembers);
+  useEffect(() => { run(load).finally(() => setLoading(false)); }, []);
+
+  const addMember = event => { event.preventDefault(); run(async () => {
+    const created = await api('/api/identity/team', { token, method: 'POST', body: JSON.stringify(form) });
+    await load(); setForm(emptyMember); setAdding(false);
+    setNotice(created.account === 'existing'
+      ? `${created.name} já tinha conta GarageOps e agora faz parte da equipe.`
+      : `${created.name} cadastrado. Passe o e-mail e a senha inicial para a pessoa entrar.`);
+  }); };
+  const change = (member, patch, success) => run(async () => {
+    await api(`/api/identity/team/${member.id}`, { token, method: 'PATCH', body: JSON.stringify(patch) });
+    await load();
+  }, success);
+  const field = key => ({ value: form[key], onChange: event => setForm(current => ({ ...current, [key]: event.target.value })) });
+  const staffRole = member => (member.roles || []).find(role => role !== 'customer');
+  const active = members.filter(member => member.status === 'active');
+
+  return <>
+    <div className="page-heading"><div><p className="eyebrow">ADMINISTRAÇÃO DA OFICINA</p><h1>Equipe</h1><p>Cadastre as pessoas que trabalham nesta oficina e defina o papel de cada uma.</p></div><button className="primary" onClick={() => setAdding(open => !open)}>{adding ? 'Fechar cadastro' : '＋ Novo membro'}</button></div>
+    <Feedback error={error} notice={notice} onDismiss={() => { setError(''); setNotice(''); }}/>
+    <section className="stat-grid">{staffRoles.map(role => <Stat key={role.id} label={role.plural} value={active.filter(member => staffRole(member) === role.id).length} icon="♙" tone={role.tone}/>)}</section>
+
+    {adding && <section className="content-card"><div className="section-title"><div><span className="section-icon">＋</span><div><h2>Novo membro da equipe</h2><p>Se o e-mail já tiver conta GarageOps, a conta é reaproveitada e só o vínculo com esta oficina é criado.</p></div></div></div>
+      <form className="platform-form" onSubmit={addMember}>
+        <fieldset><legend>Pessoa</legend>
+          <label>Nome completo<input required maxLength="80" {...field('name')}/></label>
+          <label>E-mail<input required type="email" {...field('email')}/></label>
+          <label>Telefone<input required type="tel" placeholder="+5511999999999" {...field('phone')}/></label>
+        </fieldset>
+        <fieldset><legend>Acesso</legend>
+          <label>Papel nesta oficina<select required {...field('role')}>{staffRoles.map(role => <option key={role.id} value={role.id}>{role.label}</option>)}</select></label>
+          <label>Senha inicial <span className="optional">Mín. 12 caracteres · só para conta nova</span><input type="password" minLength="12" autoComplete="new-password" {...field('password')}/></label>
+          <p className="muted small-note">Clientes não entram por aqui: eles recebem o convite de acesso.</p>
+        </fieldset>
+        <div className="form-actions"><button type="button" className="secondary" onClick={() => { setAdding(false); setForm(emptyMember); }}>Cancelar</button><button className="primary" disabled={busy}>{busy ? 'Cadastrando…' : 'Cadastrar membro'} <span>→</span></button></div>
+      </form>
+    </section>}
+
+    <section className="content-card">
+      <div className="section-title"><div><span className="section-icon">♙</span><div><h2>Membros</h2><p>{active.length} ativo(s) de {members.length}</p></div></div></div>
+      <div className="tenant-list">
+        {members.map(member => {
+          const self = member.user_id === user?.id;
+          return <article className={`tenant-row ${member.status === 'active' ? 'active' : 'suspended'}`} key={member.id}>
+            <div className="tenant-main team-main">
+              <span className="customer-avatar">{member.name.slice(0, 1).toUpperCase()}</span>
+              <div><b>{member.name}{self ? ' (você)' : ''}</b><small>{member.email} · {member.phone || 'sem telefone'}</small></div>
+              <select className="filter-select" aria-label={`Papel de ${member.name}`} value={staffRole(member)} disabled={self || busy || member.status !== 'active'} onChange={event => change(member, { role: event.target.value }, `Papel de ${member.name} atualizado.`)}>{staffRoles.map(role => <option key={role.id} value={role.id}>{role.label}</option>)}</select>
+              <span className={`status-pill ${member.status === 'active' ? 'approved' : 'refused'}`}>{member.status === 'active' ? 'Ativo' : 'Desativado'}</span>
+              <span className="tenant-actions">{!self && <button className={member.status === 'active' ? 'danger-button' : 'secondary'} disabled={busy} onClick={() => change(member, { status: member.status === 'active' ? 'inactive' : 'active' }, member.status === 'active' ? `${member.name} não consegue mais abrir esta oficina.` : `${member.name} reativado.`)}>{member.status === 'active' ? 'Desativar' : 'Reativar'}</button>}</span>
+            </div>
+          </article>;
+        })}
+        {!loading && !members.length && <Empty title="Nenhum membro" detail="Use “Novo membro” para cadastrar a equipe."/>}
+      </div>
+    </section>
+  </>;
+}
 
 function PlatformConsole({ token, user, onSignout }) {
   const [tenants, setTenants] = useState([]);
@@ -616,6 +702,6 @@ function Empty({ title, detail }) { return <div className="empty-state"><span>�
 function Stat({ label, value, icon, tone }) { return <article className="stat-card"><span className={`stat-icon ${tone}`}>{icon}</span><div><small>{label}</small><b>{value}</b></div></article>; }
 function OrderList({ orders, onOpen }) { return <div className="order-table">{orders.map(order => <button className="order-row" key={order.id} onClick={() => onOpen(order.id)}><span className="order-id">OS-{order.id.slice(0, 6).toUpperCase()}</span><span className="order-description"><b>{order.problem}</b><small>{new Date(order.opened_at).toLocaleDateString('pt-BR')}</small></span><span className={`status-pill ${order.status}`}>{statusLabels[order.status] || order.status}</span><span className="row-chevron">→</span></button>)}{!orders.length&&<Empty title="Nenhuma ordem encontrada" detail="As ordens desta oficina aparecerão aqui."/>}</div>; }
 function currency(value) { return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
-function roleLabel(role) { return ({ owner: 'Administrador', attendant: 'Atendente', mechanic: 'Mecânico', finance: 'Financeiro', customer: 'Cliente' })[role] || role; }
+function roleLabel(role) { return ({ tenant_admin: 'Administrador', attendant: 'Atendente', mechanic: 'Mecânico', finance: 'Financeiro', customer: 'Cliente' })[role] || role; }
 
 createRoot(document.getElementById('root')).render(<App/>);

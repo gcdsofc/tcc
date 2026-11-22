@@ -97,3 +97,9 @@
 .vehicle-ref .inline-link{font-size:12px;font-weight:600}
 
 .auth-card input[readonly]{background:#f2f5f6;color:#526576;cursor:not-allowed}
+
+/* ===== Equipe da oficina ===== */
+.team-main{grid-template-columns:auto minmax(0,1fr) 170px auto auto}
+.team-main .filter-select{width:100%}
+.small-note{margin:0;font-size:12px;line-height:1.5}
+@media(max-width:1000px){.team-main{grid-template-columns:auto minmax(0,1fr) auto}.team-main .filter-select{grid-column:2}}

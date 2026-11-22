@@ -7,11 +7,11 @@ const platform=await login('plataforma@garageops.local');
 assert.equal(platform.platform,true);assert.equal(platform.offices.length,0,'Plataforma não tem vínculo com oficinas');
 const P=platform.token,tenantA='00000000-0000-4000-8000-000000000001';
 // Negativas: a conta da plataforma não lê nem altera dados operacionais.
-await call('/api/customers/customers',{token:P,expect:409});
-await call('/api/customers/vehicles',{token:P,expect:409});
-await call('/api/orders/orders',{token:P,expect:409});
-await call('/api/orders/orders/10000000-0000-4000-8000-000000000003',{token:P,expect:409});
-await call('/api/orders/history',{token:P,expect:409});
+await call('/api/customers/customers',{token:P,expect:403});
+await call('/api/customers/vehicles',{token:P,expect:403});
+await call('/api/orders/orders',{token:P,expect:403});
+await call('/api/orders/orders/10000000-0000-4000-8000-000000000003',{token:P,expect:403});
+await call('/api/orders/history',{token:P,expect:403});
 await call('/api/identity/auth/select-office',{token:P,method:'POST',body:{tenantId:tenantA},expect:403});
 await call('/api/customers/internal/tenants/'+tenantA,{token:P,method:'DELETE',expect:404});
 // Contas de oficina não acessam o console.
@@ -24,7 +24,7 @@ assert.ok(list.length>=5);assert.deepEqual(Object.keys(list[0]).sort(),['brand_c
 const slug='teste-plataforma-'+Date.now();
 const t=await call('/api/identity/platform/tenants',{token:P,method:'POST',expect:201,body:{name:'Oficina Teste',slug,brandColor:'#2563eb',ownerName:'Dono Teste',ownerEmail:`${slug}@demo.local`,ownerPhone:'+5511970000000',ownerPassword:'SenhaInicial2026!'}});
 const owner=await call('/api/identity/auth/login',{method:'POST',body:{email:`${slug}@demo.local`,password:'SenhaInicial2026!'}});
-assert.equal(owner.offices.length,1);assert.deepEqual(owner.offices[0].roles,['owner']);
+assert.equal(owner.offices.length,1);assert.deepEqual(owner.offices[0].roles,['tenant_admin']);
 const ownerOffice=await call('/api/identity/auth/select-office',{token:owner.token,method:'POST',body:{tenantId:t.id}});
 await call('/api/customers/customers',{token:ownerOffice.token,method:'POST',expect:201,body:{name:'Cliente da oficina teste',phone:'+5511970000001'}});
 await call(`/api/identity/platform/tenants/${t.id}`,{token:P,method:'PATCH',body:{name:'Oficina Teste Editada'}});
