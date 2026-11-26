@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useSession } from '../../app/session';
 import { useAsync, useResource } from '../../app/hooks';
 import { primaryStaffRole } from '../../app/permissions';
-import { initials } from '../../app/format';
+import { formatPhone, initials } from '../../app/format';
 import { identityService } from '../../services/identity';
 import { EmptyState, Feedback, Loading, PageHeading, SectionTitle, Stat } from '../../components/ui';
 import { Icon } from '../../components/Icon';
@@ -183,7 +183,7 @@ export function TeamPage() {
                       {self ? ' (você)' : ''}
                     </b>
                     <small>
-                      {member.email} · {member.phone || 'sem telefone'}
+                      {member.email} · {formatPhone(member.phone) || 'sem telefone'}
                     </small>
                   </div>
                   <select

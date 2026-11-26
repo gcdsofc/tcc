@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Headers, HttpCode, Param, Post, Query } from '@nestjs/common';
-import { conflict, Database, InternalEndpoint, notFound, text } from '../../../libs/common/src';
+import { conflict, Database, InternalEndpoint, normalizePhone, notFound, text } from '../../../libs/common/src';
 
 /** Rotas usadas só por outros serviços (rede interna, com segredo; o nginx bloqueia /internal/). */
 @Controller('internal')
@@ -12,7 +12,7 @@ export class InternalController {
   @HttpCode(200)
   async link(@Body() body: Record<string, unknown>) {
     const tenantId = text(body?.tenantId, 64);
-    const phone = text(body?.phone, 40);
+    const phone = normalizePhone(text(body?.phone, 40));
     const identityUserId = text(body?.identityUserId, 64);
     const updated = await this.db.query(
       `update customer_profiles set identity_user_id=$1::uuid where tenant_id::text=$2 and phone=$3
@@ -31,7 +31,7 @@ export class InternalController {
   @Get('profile')
   @InternalEndpoint()
   async profile(@Query('tenantId') tenantId: string, @Query('phone') phone: string) {
-    const found = await this.db.query('select name,email from customer_profiles where tenant_id::text=$1 and phone=$2', [String(tenantId ?? ''), String(phone ?? '')]);
+    const found = await this.db.query('select name,email from customer_profiles where tenant_id::text=$1 and phone=$2', [String(tenantId ?? ''), normalizePhone(phone)]);
     if (!found.rowCount) throw notFound('Perfil local não localizado.');
     return found.rows[0];
   }
@@ -48,6 +48,30 @@ export class InternalController {
     if (!found.rowCount) throw notFound('Cliente ou veículo não localizado.');
     const row = found.rows[0];
     return { customerId: row.customer_id, vehicleId: row.vehicle_id, identityUserId: row.identity_user_id };
+  }
+
+  /**
+   * Nome do cliente e identificação do veículo das ordens, para o serviço de ordens exibir
+   * "quem" e "qual carro" sem acessar este banco. Só devolve registros da oficina informada.
+   */
+  @Post('order-refs')
+  @InternalEndpoint()
+  @HttpCode(200)
+  async orderRefs(@Body() body: Record<string, unknown>, @Headers('x-tenant-id') tenantId: string) {
+    const ids = (value: unknown) =>
+      Array.isArray(value) ? [...new Set(value.filter((id): id is string => typeof id === 'string' && id.length <= 64))].slice(0, 1000) : [];
+    const customerIds = ids(body?.customerIds);
+    const vehicleIds = ids(body?.vehicleIds);
+    const tenant = String(tenantId ?? '');
+    const [customers, vehicles] = await Promise.all([
+      customerIds.length
+        ? this.db.query('select id,name from customer_profiles where tenant_id::text=$1 and id::text = any($2::text[])', [tenant, customerIds])
+        : Promise.resolve({ rows: [] }),
+      vehicleIds.length
+        ? this.db.query('select id,plate,make,model,year from vehicles where tenant_id::text=$1 and id::text = any($2::text[])', [tenant, vehicleIds])
+        : Promise.resolve({ rows: [] }),
+    ]);
+    return { customers: customers.rows, vehicles: vehicles.rows };
   }
 
   /** Exclusão pedida pelo console da plataforma: apaga os dados da oficina sem devolvê-los. */

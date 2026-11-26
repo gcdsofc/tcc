@@ -136,6 +136,12 @@ export interface OrderSummary {
   opened_at: string;
   vehicle_id: string;
   customer_id?: string;
+  /** Preenchidos pelo serviço de ordens a partir do serviço de clientes; null se indisponível. */
+  customer_name?: string | null;
+  vehicle_plate?: string | null;
+  vehicle_make?: string | null;
+  vehicle_model?: string | null;
+  vehicle_year?: number | null;
 }
 
 export interface EstimateItem {
@@ -169,11 +175,18 @@ export interface Payment {
   created_at: string;
 }
 
+export interface Execution {
+  description: string;
+  performed_at: string;
+}
+
 /** Ordem completa (GET /orders/:id). */
 export interface OrderDetail extends OrderSummary {
   diagnosis: string | null;
+  closed_reason?: string | null;
   estimates: Estimate[];
   messages: OrderMessage[];
+  executions?: Execution[];
   payments: Payment[];
 }
 

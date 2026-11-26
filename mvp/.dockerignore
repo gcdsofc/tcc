@@ -1,0 +1,6 @@
+# Nada da máquina local entra nas imagens: as dependências são instaladas dentro do build.
+**/node_modules
+**/dist
+**/coverage
+**/*.tsbuildinfo
+**/.env

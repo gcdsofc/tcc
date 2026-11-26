@@ -3,7 +3,7 @@ import { useSession } from '../../app/session';
 import { useTenantData } from '../../app/tenant-data';
 import { useAsync } from '../../app/hooks';
 import { capabilities } from '../../app/permissions';
-import { formatDate } from '../../app/format';
+import { formatDate, orderVehicleModel } from '../../app/format';
 import { workordersService } from '../../services/workorders';
 import { EmptyState, Feedback, OrderStatusPill, PageHeading, SectionTitle, Stat } from '../../components/ui';
 import { Icon } from '../../components/Icon';
@@ -31,7 +31,11 @@ function OrderList({ orders, onOpen }: { orders: OrderSummary[]; onOpen: (id: st
           <span className="order-id">OS-{order.id.slice(0, 6).toUpperCase()}</span>
           <span className="order-description">
             <b>{order.problem}</b>
-            <small>{formatDate(order.opened_at)}</small>
+            <small>
+              {[order.customer_name, [order.vehicle_plate, orderVehicleModel(order)].filter(Boolean).join(' '), formatDate(order.opened_at)]
+                .filter(Boolean)
+                .join(' · ')}
+            </small>
           </span>
           <OrderStatusPill status={order.status} />
           <span className="row-chevron" aria-hidden="true">

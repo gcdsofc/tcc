@@ -129,6 +129,7 @@ export function VehicleReference({ token, value, onChange }: Props) {
       .fipeYear(token, value.brandCode, value.modelCode, code)
       .then((found) => {
         set({
+          yearCode: code,
           year: String(found.year),
           fipeCode: found.fipeCode,
           price: found.price,

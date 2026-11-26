@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/co
 import * as bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
 import {
-  badRequest, BusinessException, conflict, CurrentPrincipal, Database, forbidden, notFound, TenantEndpoint, TenantPrincipal, text,
+  badRequest, BusinessException, conflict, CurrentPrincipal, Database, forbidden, normalizePhone, notFound, TenantEndpoint, TenantPrincipal, text,
 } from '../../../libs/common/src';
 import { TenantAdminGuard } from './tenant-admin.guard';
 import { isStaffRole, nextRoles, rejectMemberChange } from './team.rules';
@@ -31,7 +31,7 @@ export class TeamController {
   async add(@CurrentPrincipal() p: TenantPrincipal, @Body() body: Record<string, unknown>) {
     const name = text(body?.name, 80);
     const email = text(body?.email, 200).toLowerCase();
-    const phone = text(body?.phone, 40);
+    const phone = normalizePhone(text(body?.phone, 40));
     const role = body?.role;
     const password = String(body?.password ?? '');
     if (!name || !email || !phone) throw badRequest('Informe nome, e-mail e telefone.');

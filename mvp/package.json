@@ -12,6 +12,7 @@
     "test:cov": "npm --prefix backend run test:cov",
     "smoke": "node scripts/smoke.mjs",
     "platform-check": "node scripts/platform-check.mjs",
-    "team-check": "node scripts/team-check.mjs"
+    "team-check": "node scripts/team-check.mjs",
+    "bugfix-check": "node scripts/bugfix-check.mjs"
   }
 }

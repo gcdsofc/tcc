@@ -3,7 +3,7 @@ import { useSession } from '../../app/session';
 import { useTenantData } from '../../app/tenant-data';
 import { useAsync, useResource } from '../../app/hooks';
 import { capabilities } from '../../app/permissions';
-import { currency, formatDate } from '../../app/format';
+import { currency, formatDate, formatDateTime, orderVehicleModel } from '../../app/format';
 import { workordersService } from '../../services/workorders';
 import { Feedback, Loading, OrderStatusPill, SectionTitle } from '../../components/ui';
 import { Icon } from '../../components/Icon';
@@ -223,6 +223,19 @@ export function OrderDetailPage({ orderId, onBack }: OrderDetailPageProps) {
           <p className="eyebrow">Ordem de serviço · {order.id.slice(0, 8).toUpperCase()}</p>
           <h1>{order.problem}</h1>
           <p>Aberta em {formatDate(order.opened_at)}</p>
+          <dl className="order-parties">
+            <div>
+              <dt>Cliente</dt>
+              <dd>{order.customer_name || 'Não informado'}</dd>
+            </div>
+            <div>
+              <dt>Veículo</dt>
+              <dd>
+                {order.vehicle_plate ? <span className="plate-chip">{order.vehicle_plate}</span> : 'Não informado'}
+                {orderVehicleModel(order) && <span> {orderVehicleModel(order)}</span>}
+              </dd>
+            </div>
+          </dl>
         </div>
         <OrderStatusPill status={order.status} />
       </div>
@@ -255,6 +268,27 @@ export function OrderDetailPage({ orderId, onBack }: OrderDetailPageProps) {
               onDecide={handleDecide}
             />
           ))}
+
+          {!!order.executions?.length && (
+            <div className="workflow-action">
+              <b>Serviços executados</b>
+              <ul className="execution-list">
+                {order.executions.map((execution, index) => (
+                  <li key={`${execution.performed_at}-${index}`}>
+                    <span>{execution.description}</span>
+                    <small>{formatDateTime(execution.performed_at)}</small>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {order.status === 'closed_refused' && order.closed_reason && (
+            <div className="workflow-action">
+              <b>Encerrada por recusa</b>
+              <p>{order.closed_reason}</p>
+            </div>
+          )}
 
           {canShowEstimateForm && (
             <EstimateForm busy={busy} onSubmit={handleEstimate} onInvalid={setError} />

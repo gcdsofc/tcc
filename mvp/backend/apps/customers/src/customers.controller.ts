@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import {
-  badRequest, conflict, CurrentPrincipal, Database, forbidden, isUuid, notFound, optionalText, Public, TenantEndpoint, TenantPrincipal, text, unavailable,
+  badRequest, conflict, CurrentPrincipal, Database, forbidden, isUuid, normalizePhone, notFound, optionalText, Public, TenantEndpoint, TenantPrincipal, text, unavailable,
 } from '../../../libs/common/src';
 import { canReadProfile, normalizeCep, normalizeFipeCode } from './domain';
 
@@ -32,7 +32,7 @@ export class CustomersController {
   @TenantEndpoint('tenant_admin', 'attendant')
   async createCustomer(@CurrentPrincipal() p: TenantPrincipal, @Body() body: Record<string, unknown>) {
     const name = text(body?.name, 160);
-    const phone = text(body?.phone, 40);
+    const phone = normalizePhone(text(body?.phone, 40));
     const email = text(body?.email, 200).toLowerCase() || null;
     if (!name || !phone) throw badRequest('Nome e telefone são obrigatórios.');
     let cep: string | null;

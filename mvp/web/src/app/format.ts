@@ -1,4 +1,4 @@
-import type { EstimateStatus, OrderStatus, TenantRole } from '../types/api';
+import type { EstimateStatus, OrderStatus, OrderSummary, TenantRole } from '../types/api';
 
 export const orderStatusLabels: Record<OrderStatus, string> = {
   open: 'Aberta',
@@ -58,4 +58,20 @@ export function formatDateTime(value: string | null | undefined): string {
 
 export function initials(name: string | undefined, fallback = 'G'): string {
   return name?.trim().slice(0, 1).toUpperCase() || fallback;
+}
+
+/** Marca, modelo e ano do veículo da ordem (ex.: "Fiat Uno 2015"); vazio se não houver. */
+export function orderVehicleModel(order: Pick<OrderSummary, 'vehicle_make' | 'vehicle_model' | 'vehicle_year'>): string {
+  return [order.vehicle_make, order.vehicle_model, order.vehicle_year].filter(Boolean).join(' ');
+}
+
+/**
+ * Exibição do telefone canônico do backend (só dígitos, com 55; ver normalizePhone em libs/common).
+ * "5511991000301" → "+55 (11) 99100-0301". Outros formatos são mostrados como vieram.
+ */
+export function formatPhone(value: string | null | undefined): string {
+  if (!value) return '';
+  const match = /^55(\d{2})(\d{4,5})(\d{4})$/.exec(value);
+  if (match) return `+55 (${match[1]}) ${match[2]}-${match[3]}`;
+  return /^\d+$/.test(value) ? `+${value}` : value;
 }

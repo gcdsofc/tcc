@@ -1,4 +1,4 @@
-import { canCloseRefused, canExecute, estimateTotal, isSettled, paymentFits, validateEstimateItems } from '../src/domain';
+import { canCloseRefused, canExecute, canMarkReady, estimateTotal, isClosed, isSettled, paymentFits, validateEstimateItems } from '../src/domain';
 
 describe('regras de orçamento e ordem', () => {
   it('calcula orçamento com serviços e peças digitados manualmente, sem estoque', () => {
@@ -52,5 +52,13 @@ describe('regras de orçamento e ordem', () => {
     expect(isSettled(200, 200)).toBe(true);
     expect(isSettled(200, 199.5)).toBe(false);
     expect(isSettled(0, 0)).toBe(false);
+  });
+
+  it('ordem encerrada não volta para pronta nem é reencerrada', () => {
+    expect(canMarkReady('in_progress')).toBe(true);
+    for (const status of ['open', 'approved', 'ready', 'closed', 'closed_refused']) expect(canMarkReady(status)).toBe(false);
+    expect(isClosed('closed')).toBe(true);
+    expect(isClosed('closed_refused')).toBe(true);
+    expect(isClosed('awaiting_approval')).toBe(false);
   });
 });

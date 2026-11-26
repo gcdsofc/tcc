@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
-import { Database } from '../../../libs/common/src';
+import { Database, normalizePhone, phoneSql } from '../../../libs/common/src';
 
 export const demoId = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 const DEMO_PASSWORD = 'GarageOps2026!';
@@ -67,6 +67,9 @@ export class IdentitySchema implements OnModuleInit {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS platform_role text;
       -- Migração do MVP em Express: o papel "owner" passou a se chamar "tenant_admin".
       UPDATE memberships SET roles = array_replace(roles, 'owner', 'tenant_admin') WHERE 'owner' = ANY(roles);
+      -- Telefones gravados antes da regra canônica (ver normalizePhone em libs/common) passam para o formato novo.
+      UPDATE users SET phone = ${phoneSql('phone')} WHERE phone IS NOT NULL AND phone IS DISTINCT FROM ${phoneSql('phone')};
+      UPDATE invitations SET phone = ${phoneSql('phone')} WHERE phone IS DISTINCT FROM ${phoneSql('phone')};
     `);
     if (process.env.BOOTSTRAP_DEMO === 'true') await this.seedDemo();
   }
@@ -75,7 +78,7 @@ export class IdentitySchema implements OnModuleInit {
     const hash = await bcrypt.hash(DEMO_PASSWORD, 10);
     await this.db.query(
       `insert into users(id,name,email,phone,password_hash,platform_role) values($1,$2,$3,$4,$5,'platform_admin') on conflict(id) do update set platform_role='platform_admin'`,
-      [demoId(900), 'Administrador da Plataforma', 'plataforma@garageops.local', '+5511990000900', hash],
+      [demoId(900), 'Administrador da Plataforma', 'plataforma@garageops.local', normalizePhone('+5511990000900'), hash],
     );
     const existing = await this.db.query<{ n: number }>('select count(*)::int n from tenants');
     if (existing.rows[0].n > 0) return; // dados já carregados (inclusive os criados durante as demonstrações)
@@ -87,7 +90,7 @@ export class IdentitySchema implements OnModuleInit {
     }
     let membership = 500;
     for (const [id, name, email, phone, office, role] of demoUsers()) {
-      await this.db.query('insert into users(id,name,email,phone,password_hash) values($1,$2,$3,$4,$5) on conflict(id) do nothing', [demoId(id), name, email, phone, hash]);
+      await this.db.query('insert into users(id,name,email,phone,password_hash) values($1,$2,$3,$4,$5) on conflict(id) do nothing', [demoId(id), name, email, normalizePhone(phone), hash]);
       if (office) await this.db.query('insert into memberships(id,user_id,tenant_id,roles) values($1,$2,$3,$4)', [demoId(membership++), demoId(id), demoId(office), [role]]);
     }
     for (const [user, offices] of CUSTOMER_LINKS) {

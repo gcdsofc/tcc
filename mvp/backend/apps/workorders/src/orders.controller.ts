@@ -2,7 +2,7 @@ import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
 import {
   badRequest, callService, conflict, CurrentPrincipal, Database, forbidden, notFound, Public, TenantEndpoint, TenantPrincipal, text, unavailable,
 } from '../../../libs/common/src';
-import { canCloseRefused, canExecute, estimateTotal, isSettled, paymentFits, validateEstimateItems } from './domain';
+import { canCloseRefused, canExecute, canMarkReady, estimateTotal, isClosed, isSettled, paymentFits, validateEstimateItems } from './domain';
 
 const ALL_TENANT_ROLES = ['tenant_admin', 'attendant', 'mechanic', 'finance', 'customer'] as const;
 
@@ -27,13 +27,14 @@ export class OrdersController {
     const result = this.isCustomer(p)
       ? await this.db.query('select * from orders where tenant_id=$1 and customer_identity_id=$2 order by opened_at desc', [p.activeTenantId, p.userId])
       : await this.db.query('select * from orders where tenant_id=$1 order by opened_at desc', [p.activeTenantId]);
-    return result.rows;
+    return this.withRefs(result.rows, p.activeTenantId);
   }
 
   @Get('history')
   @TenantEndpoint('customer')
   async history(@CurrentPrincipal() p: TenantPrincipal) {
-    return (await this.db.query('select * from orders where tenant_id=$1 and customer_identity_id=$2 order by opened_at desc', [p.activeTenantId, p.userId])).rows;
+    const result = await this.db.query('select * from orders where tenant_id=$1 and customer_identity_id=$2 order by opened_at desc', [p.activeTenantId, p.userId]);
+    return this.withRefs(result.rows, p.activeTenantId);
   }
 
   @Post('orders')
@@ -74,7 +75,8 @@ export class OrdersController {
       this.db.query('select description,performed_at from executions where order_id=$1 and tenant_id=$2 order by performed_at', [order.id, order.tenant_id]),
       this.db.query('select amount,method,created_at from payments where order_id=$1 and tenant_id=$2', [order.id, order.tenant_id]),
     ]);
-    return { ...order, estimates: estimates.rows, messages: messages.rows, executions: executions.rows, payments: payments.rows };
+    const [described] = await this.withRefs([order], order.tenant_id);
+    return { ...described, estimates: estimates.rows, messages: messages.rows, executions: executions.rows, payments: payments.rows };
   }
 
   @Post('orders/:id/diagnosis')
@@ -169,6 +171,7 @@ export class OrdersController {
   @HttpCode(200)
   async closeRefused(@CurrentPrincipal() p: TenantPrincipal, @Param('id') id: string, @Body() body: Record<string, unknown>) {
     const order = await this.findOrder(id, p);
+    if (isClosed(order.status)) throw conflict('Ordem já encerrada.');
     const latest = await this.db.query('select status from estimates where order_id=$1 order by version desc limit 1', [order.id]);
     if (!latest.rowCount || !canCloseRefused(latest.rows[0].status)) throw conflict('A versão mais recente precisa estar recusada pelo cliente.');
     const updated = await this.db.query(`update orders set status='closed_refused',closed_reason=$1,updated_at=now() where id=$2 returning *`, [text(body?.reason, 1000) || null, order.id]);
@@ -180,6 +183,7 @@ export class OrdersController {
   @HttpCode(200)
   async ready(@CurrentPrincipal() p: TenantPrincipal, @Param('id') id: string) {
     const order = await this.findOrder(id, p);
+    if (!canMarkReady(order.status)) throw conflict('Só uma ordem em execução pode ser marcada como pronta.');
     const executed = await this.db.query<{ n: number }>('select count(*)::int n from executions where order_id=$1', [order.id]);
     if (!executed.rows[0].n) throw conflict('Registre ao menos um serviço executado.');
     return (await this.db.query(`update orders set status='ready',updated_at=now() where id=$1 returning *`, [order.id])).rows[0];
@@ -208,6 +212,37 @@ export class OrdersController {
     const { total, paid } = await this.balance(order);
     if (!isSettled(total, paid)) throw conflict(`A ordem ainda possui saldo pendente de ${(total - paid).toFixed(2)}.`, 'OUTSTANDING_BALANCE');
     return (await this.db.query(`update orders set status='closed',updated_at=now() where id=$1 and tenant_id=$2 returning *`, [order.id, order.tenant_id])).rows[0];
+  }
+
+  /**
+   * Acrescenta à ordem o nome do cliente e placa/marca/modelo/ano do veículo, consultando o
+   * serviço de clientes pela rota interna. Se ele não responder, a ordem vem sem esses campos
+   * (null) em vez de falhar a tela inteira.
+   */
+  private async withRefs<T extends { customer_id: string; vehicle_id: string }>(orders: T[], tenantId: string) {
+    if (!orders.length) return [];
+    const refs = await callService<{
+      customers: { id: string; name: string }[];
+      vehicles: { id: string; plate: string; make: string | null; model: string | null; year: number | null }[];
+    }>(process.env.CUSTOMER_URL, '/internal/order-refs', {
+      method: 'POST',
+      headers: { 'x-tenant-id': tenantId },
+      body: { customerIds: orders.map((o) => o.customer_id), vehicleIds: orders.map((o) => o.vehicle_id) },
+    });
+    const customers = new Map((refs.ok ? refs.data?.customers ?? [] : []).map((c) => [String(c.id), c]));
+    const vehicles = new Map((refs.ok ? refs.data?.vehicles ?? [] : []).map((v) => [String(v.id), v]));
+    return orders.map((order) => {
+      const customer = customers.get(String(order.customer_id));
+      const vehicle = vehicles.get(String(order.vehicle_id));
+      return {
+        ...order,
+        customer_name: customer?.name ?? null,
+        vehicle_plate: vehicle?.plate ?? null,
+        vehicle_make: vehicle?.make ?? null,
+        vehicle_model: vehicle?.model ?? null,
+        vehicle_year: vehicle?.year ?? null,
+      };
+    });
   }
 
   private isCustomer(p: TenantPrincipal): boolean {

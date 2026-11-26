@@ -2127,6 +2127,30 @@ label:focus-within {
   font: 500 12px/1.4 var(--font-mono);
   color: var(--muted);
 }
+/* Cliente e veículo da ordem, logo abaixo do relato. */
+.order-parties {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  margin: 12px 0 0;
+}
+.order-parties div {
+  display: grid;
+  gap: 4px;
+}
+.order-parties dt {
+  font-size: 12px;
+  color: var(--muted);
+}
+.order-parties dd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+}
 .detail-title .status-pill {
   padding: 4px 10px 4px 9px;
   font-size: 13px;
@@ -2171,6 +2195,24 @@ label:focus-within {
   margin: 0 0 12px;
   font-size: 13px;
   line-height: 1.5;
+  color: var(--muted);
+}
+.execution-list {
+  display: grid;
+  gap: 6px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.execution-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+.execution-list small {
+  flex-shrink: 0;
+  font-size: 13px;
   color: var(--muted);
 }
 .diagnosis-block form,

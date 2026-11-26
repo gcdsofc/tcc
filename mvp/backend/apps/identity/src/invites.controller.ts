@@ -3,7 +3,7 @@ import * as bcrypt from 'bcryptjs';
 import { createHash, randomBytes, randomInt, randomUUID } from 'crypto';
 import {
   AccountEndpoint, AuthPrincipal, badRequest, BusinessException, callService, conflict, CurrentPrincipal, Database, forbidden,
-  notFound, Public, TenantEndpoint, TenantPrincipal, text,
+  normalizePhone, notFound, Public, TenantEndpoint, TenantPrincipal, text,
 } from '../../../libs/common/src';
 import { TenantAdminGuard } from './tenant-admin.guard';
 import { TokensService } from './tokens.service';
@@ -29,7 +29,7 @@ export class InvitesController {
   @TenantEndpoint('tenant_admin')
   @UseGuards(TenantAdminGuard)
   async create(@CurrentPrincipal() principal: TenantPrincipal, @Body() body: Record<string, unknown>) {
-    const phone = text(body?.phone, 40);
+    const phone = normalizePhone(text(body?.phone, 40));
     const customerName = text(body?.customerName, 160);
     if (!phone || !customerName) throw badRequest('Nome e telefone são obrigatórios.');
     const hasAccess = await this.db.query(
@@ -80,7 +80,7 @@ export class InvitesController {
     const userId = randomUUID();
     const hash = await bcrypt.hash(password, 12);
     try {
-      await this.db.query('insert into users(id,name,email,phone,password_hash) values($1,$2,$3,$4,$5)', [userId, name, email, invitation.phone, hash]);
+      await this.db.query('insert into users(id,name,email,phone,password_hash) values($1,$2,$3,$4,$5)', [userId, name, email, normalizePhone(invitation.phone), hash]);
     } catch (error) {
       if ((error as { code?: string }).code === '23505') {
         throw conflict('Este e-mail já é usado por outra conta GarageOps. Peça à oficina para corrigir o e-mail do cadastro ou entre com a conta existente.', 'EMAIL_TAKEN');
@@ -104,7 +104,13 @@ export class InvitesController {
   async accept(@CurrentPrincipal() principal: AuthPrincipal, @Body() body: Record<string, unknown>) {
     const invitation = await this.checkCode(body?.token, body?.code);
     const account = await this.db.query('select phone from users where id=$1', [principal.userId]);
-    if (account.rows[0]?.phone !== invitation.phone) throw forbidden('A conta autenticada não corresponde ao telefone convidado.', 'PHONE_MISMATCH');
+    if (normalizePhone(account.rows[0]?.phone) !== normalizePhone(invitation.phone)) throw forbidden('A conta autenticada não corresponde ao telefone convidado.', 'PHONE_MISMATCH');
+    // Quem foi desativado da equipe perde o acesso na hora; o convite de cliente não pode reativá-lo.
+    const current = await this.db.query('select roles,status from memberships where user_id=$1 and tenant_id=$2', [principal.userId, invitation.tenant_id]);
+    const member = current.rows[0];
+    if (member && member.status !== 'active' && (member.roles as string[]).some((role) => role !== 'customer')) {
+      throw conflict('Seu acesso a esta oficina está desativado. Fale com o administrador da oficina.', 'MEMBERSHIP_INACTIVE');
+    }
     const linked = await this.linkProfile(invitation, principal.userId);
     if (!linked.ok) throw conflict('Não foi possível associar o perfil de cliente desta oficina.', 'LINK_FAILED');
     await this.db.query(
@@ -149,13 +155,13 @@ export class InvitesController {
   }
 
   private async phoneHasAccount(phone: string): Promise<boolean> {
-    return ((await this.db.query('select 1 from users where phone=$1', [phone])).rowCount ?? 0) > 0;
+    return ((await this.db.query('select 1 from users where phone=$1', [normalizePhone(phone)])).rowCount ?? 0) > 0;
   }
 
   private async invitedProfile(invitation: Invitation): Promise<{ name: string; email: string | null }> {
     const response = await callService<{ name: string; email: string | null }>(
       process.env.CUSTOMER_URL,
-      `/internal/profile?tenantId=${encodeURIComponent(invitation.tenant_id)}&phone=${encodeURIComponent(invitation.phone)}`,
+      `/internal/profile?tenantId=${encodeURIComponent(invitation.tenant_id)}&phone=${encodeURIComponent(normalizePhone(invitation.phone))}`,
     );
     if (!response.ok || !response.data) {
       throw new BusinessException('PROFILE_NOT_FOUND', 'O cadastro deste cliente não foi encontrado na oficina. Peça um novo convite.');
@@ -166,7 +172,7 @@ export class InvitesController {
   private linkProfile(invitation: Invitation, identityUserId: string) {
     return callService(process.env.CUSTOMER_URL, '/internal/link-customer', {
       method: 'POST',
-      body: { tenantId: invitation.tenant_id, phone: invitation.phone, identityUserId },
+      body: { tenantId: invitation.tenant_id, phone: normalizePhone(invitation.phone), identityUserId },
     });
   }
 }
