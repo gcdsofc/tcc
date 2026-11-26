@@ -3,7 +3,7 @@ import { useSession } from '../../app/session';
 import { useTenantData } from '../../app/tenant-data';
 import { useAsync } from '../../app/hooks';
 import { capabilities } from '../../app/permissions';
-import { initials } from '../../app/format';
+import { formatPhone, initials } from '../../app/format';
 import { customersService } from '../../services/customers';
 import { EmptyState, Feedback, PageHeading, SectionTitle } from '../../components/ui';
 import type { Customer, CustomerInput } from '../../types/api';
@@ -215,7 +215,7 @@ function CustomerRow({ customer, vehicleCount }: { customer: Customer; vehicleCo
       <div className="customer-main">
         <b>{customer.name}</b>
         <small>
-          {customer.phone}
+          {formatPhone(customer.phone)}
           {customer.email ? ` · ${customer.email}` : ''}
         </small>
         {addressLine && <small className="customer-address">{addressLine}</small>}
@@ -234,7 +234,7 @@ export function CustomersPage() {
   const filtered = useMemo(
     () =>
       customers.filter((customer) =>
-        `${customer.name} ${customer.phone} ${customer.email || ''}`
+        `${customer.name} ${customer.phone} ${formatPhone(customer.phone)} ${customer.email || ''}`
           .toLowerCase()
           .includes(search.toLowerCase()),
       ),

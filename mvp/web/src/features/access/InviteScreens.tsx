@@ -191,6 +191,17 @@ export function AcceptInvitePage({ inviteToken }: AcceptInviteProps) {
           </button>
         </form>
         <Feedback error={error} />
+        <button
+          type="button"
+          className="inline-link"
+          disabled={busy}
+          onClick={() => {
+            clearInviteParam();
+            void refreshOffices();
+          }}
+        >
+          Continuar sem aceitar o convite
+        </button>
       </section>
     </main>
   );

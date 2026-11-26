@@ -2,7 +2,7 @@ import { Body, CanActivate, Controller, Delete, ExecutionContext, Get, HttpCode,
 import * as bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
 import {
-  AuthPrincipal, badGateway, badRequest, BusinessException, callService, conflict, Database, forbidden, notFound, PlatformEndpoint, text,
+  AuthPrincipal, badGateway, badRequest, BusinessException, callService, conflict, Database, forbidden, normalizePhone, notFound, PlatformEndpoint, text,
 } from '../../../libs/common/src';
 
 /** Além do token, confere no banco se a conta continua sendo administradora da plataforma. */
@@ -49,7 +49,7 @@ export class PlatformController {
     const color = validColor(body?.brandColor) ? String(body.brandColor) : '#0f766e';
     const ownerName = text(body?.ownerName, 80);
     const email = text(body?.ownerEmail, 200).toLowerCase();
-    const phone = text(body?.ownerPhone, 40);
+    const phone = normalizePhone(text(body?.ownerPhone, 40));
     const password = String(body?.ownerPassword ?? '');
     if (!name || !slug || !ownerName || !email || !phone) throw badRequest('Informe nome da oficina, identificador e os dados do administrador da oficina.');
 

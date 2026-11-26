@@ -11,3 +11,4 @@ export * from './internal/service-secret.guard';
 export * from './internal/service-client';
 export * from './input';
 export * from './bootstrap';
+export * from './phone';

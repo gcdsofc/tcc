@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useSession } from '../../app/session';
 import { useTenantData } from '../../app/tenant-data';
 import { useAsync } from '../../app/hooks';
-import { formatDateTime } from '../../app/format';
+import { formatDateTime, formatPhone } from '../../app/format';
 import { identityService } from '../../services/identity';
 import { Feedback, PageHeading } from '../../components/ui';
 import { Icon } from '../../components/Icon';
@@ -26,6 +26,7 @@ export function InvitesPage({ onGoToClients }: InvitesPageProps) {
       setError('Selecione um cliente cadastrado nesta oficina.');
       return;
     }
+    setInvite(null);
     void run(async () => {
       const created = await identityService.createInvite(tenantToken, customer.name, customer.phone);
       setInvite(created);
@@ -62,7 +63,7 @@ export function InvitesPage({ onGoToClients }: InvitesPageProps) {
                 </option>
                 {customers.map((customer) => (
                   <option key={customer.id} value={customer.id}>
-                    {customer.name} · {customer.phone}
+                    {customer.name} · {formatPhone(customer.phone)}
                   </option>
                 ))}
               </select>

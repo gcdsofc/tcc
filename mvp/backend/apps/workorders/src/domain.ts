@@ -38,6 +38,16 @@ export function canCloseRefused(latestEstimateStatus: string): boolean {
   return latestEstimateStatus === 'refused';
 }
 
+/** Ordem encerrada (paga ou por recusa) não volta a andar no fluxo. */
+export function isClosed(orderStatus: string): boolean {
+  return orderStatus === 'closed' || orderStatus === 'closed_refused';
+}
+
+/** Só uma ordem em execução pode ser marcada como pronta para retirada. */
+export function canMarkReady(orderStatus: string): boolean {
+  return orderStatus === 'in_progress';
+}
+
 /** Pagamento não pode passar do saldo do orçamento aprovado. */
 export function paymentFits(amount: number, alreadyPaid: number, approvedTotal: number): boolean {
   return amount > 0 && amount + alreadyPaid <= approvedTotal + 0.005;

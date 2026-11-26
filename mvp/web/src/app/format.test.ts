@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   currency,
   estimateStatusLabel,
+  formatPhone,
   initials,
   orderStatusLabel,
+  orderVehicleModel,
   roleLabel,
   roleListLabel,
 } from './format';
@@ -40,5 +42,26 @@ describe('initials', () => {
     expect(initials('Ana Paula')).toBe('A');
     expect(initials('')).toBe('G');
     expect(initials(undefined, 'P')).toBe('P');
+  });
+});
+
+describe('orderVehicleModel', () => {
+  it('junta marca, modelo e ano ignorando campos vazios', () => {
+    expect(orderVehicleModel({ vehicle_make: 'Fiat', vehicle_model: 'Uno', vehicle_year: 2015 })).toBe('Fiat Uno 2015');
+    expect(orderVehicleModel({ vehicle_make: null, vehicle_model: 'Onix', vehicle_year: null })).toBe('Onix');
+    expect(orderVehicleModel({})).toBe('');
+  });
+});
+
+describe('formatPhone', () => {
+  it('formata o telefone canônico (só dígitos com 55) para exibição', () => {
+    expect(formatPhone('5511991000301')).toBe('+55 (11) 99100-0301');
+    expect(formatPhone('551133334444')).toBe('+55 (11) 3333-4444');
+  });
+
+  it('mostra estrangeiros com + e devolve formatos antigos como vieram', () => {
+    expect(formatPhone('351912345678')).toBe('+351912345678');
+    expect(formatPhone('+55 11 9999')).toBe('+55 11 9999');
+    expect(formatPhone(null)).toBe('');
   });
 });
